@@ -1,0 +1,121 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String       @id @default(cuid())
+  name          String?
+  email         String       @unique
+  password      String
+  role          String       @default("OPERATOR") // ADMIN | OPERATOR
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  productions   Production[]
+  sales         Sale[]
+  returns       SaleReturn[]
+}
+
+model Ingredient {
+  id               String            @id @default(cuid())
+  name             String
+  unit             String            // gram, ml, pcs, kg, liter
+  currentStock     Float             @default(0)
+  minStock         Float             @default(0)
+  pricePerUnit     Float             @default(0)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  recipeIngredients RecipeIngredient[]
+  stockMovements   StockMovement[]
+  productionIngredients ProductionIngredient[]
+}
+
+model Recipe {
+  id              String             @id @default(cuid())
+  name            String
+  description     String?
+  servingsPerBatch Int               @default(1)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  ingredients     RecipeIngredient[]
+  productions     Production[]
+  sales           Sale[]
+  returns         SaleReturn[]
+}
+
+model RecipeIngredient {
+  id           String     @id @default(cuid())
+  recipeId     String
+  ingredientId String
+  quantity     Float
+  recipe       Recipe     @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id])
+}
+
+model StockMovement {
+  id           String     @id @default(cuid())
+  ingredientId String
+  type         String     // IN | OUT
+  quantity     Float
+  notes        String?
+  date         DateTime   @default(now())
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id])
+}
+
+model Production {
+  id           String                 @id @default(cuid())
+  recipeId     String
+  batchCount   Int
+  totalCost    Float                  @default(0)
+  notes        String?
+  date         DateTime               @default(now())
+  createdAt    DateTime               @default(now())
+  recipe       Recipe                 @relation(fields: [recipeId], references: [id])
+  user         User?                  @relation(fields: [userId], references: [id])
+  userId       String?
+  ingredients  ProductionIngredient[]
+}
+
+model ProductionIngredient {
+  id             String     @id @default(cuid())
+  productionId   String
+  ingredientId   String
+  quantity       Float
+  priceAtTime    Float      @default(0)
+  production     Production @relation(fields: [productionId], references: [id], onDelete: Cascade)
+  ingredient     Ingredient @relation(fields: [ingredientId], references: [id])
+}
+
+model Sale {
+  id            String   @id @default(cuid())
+  recipeId      String?
+  recipeName    String
+  quantity      Int      // Total pcs sold
+  pricePerUnit  Float    // Selling price per pcs
+  totalAmount   Float    // Total revenue (quantity * pricePerUnit)
+  notes         String?
+  date          DateTime @default(now())
+  createdAt     DateTime @default(now())
+  recipe        Recipe?  @relation(fields: [recipeId], references: [id])
+  user          User?    @relation(fields: [userId], references: [id])
+  userId        String?
+}
+
+model SaleReturn {
+  id            String   @id @default(cuid())
+  recipeId      String?
+  recipeName    String
+  quantity      Int      // Total pcs returned
+  reason        String?  // Expired, Rusak, CACAT, Ditolak toko
+  lossAmount    Float    @default(0) // Kerugian retur
+  notes         String?
+  date          DateTime @default(now())
+  createdAt     DateTime @default(now())
+  recipe        Recipe?  @relation(fields: [recipeId], references: [id])
+  user          User?    @relation(fields: [userId], references: [id])
+  userId        String?
+}
