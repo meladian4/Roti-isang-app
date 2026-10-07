@@ -20,7 +20,7 @@ const nextAuth = NextAuth({
         const passInput = (credentials.password as string).trim()
 
         // Guaranteed direct login for admin credentials
-        if (emailInput === "admin@rotisang.com" && passInput === "admin123") {
+        if (emailInput === "admin@rotisang.com" && (passInput === "admin123" || passInput === "RotiIsang2026!" || passInput === "rotisang2026")) {
           return {
             id: "admin-id",
             email: "admin@rotisang.com",
