@@ -78,8 +78,10 @@ export async function auth() {
   try {
     const session = await nextAuth.auth()
     if (session) return session
-  } catch (e) {
-    console.error("NextAuth session check error:", e)
+  } catch (e: any) {
+    if (e?.digest !== "DYNAMIC_SERVER_USAGE") {
+      console.error("NextAuth session check error:", e)
+    }
   }
 
   // Check custom cookie fallback
@@ -98,8 +100,10 @@ export async function auth() {
         expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       }
     }
-  } catch (e) {
-    console.error("Cookie check error:", e)
+  } catch (e: any) {
+    if (e?.digest !== "DYNAMIC_SERVER_USAGE") {
+      console.error("Cookie check error:", e)
+    }
   }
 
   // Default fallback session to ensure APIs function smoothly
