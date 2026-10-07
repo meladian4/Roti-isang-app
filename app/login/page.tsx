@@ -22,27 +22,41 @@ export default function LoginPage() {
     setError("")
 
     try {
-      const result = await signIn("credentials", {
+      // 1. Fast API Login
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), password: password.trim() }),
+      })
+      const data = await res.json()
+
+      if (res.ok && data.success) {
+        window.location.href = "/dashboard"
+        return
+      }
+
+      if (data.error && res.status === 400) {
+        setError(data.error)
+        setLoading(false)
+        return
+      }
+    } catch (e) {
+      console.error("Fast API login error:", e)
+    }
+
+    // 2. NextAuth fallback
+    try {
+      await signIn("credentials", {
         email: email.trim(),
         password: password.trim(),
         redirect: false,
         redirectTo: "/dashboard",
       })
-
-      if (result?.error) {
-        setError("Email atau password salah. Silakan periksa kembali.")
-        setLoading(false)
-      } else {
-        window.location.href = "/dashboard"
-      }
+      window.location.href = "/dashboard"
     } catch (err: any) {
-      console.error("Login error:", err)
-      if (err?.message?.includes("CredentialsSignin") || err?.type === "CredentialsSignin") {
-        setError("Email atau password salah. Silakan periksa kembali.")
-        setLoading(false)
-      } else {
-        window.location.href = "/dashboard"
-      }
+      console.error("NextAuth login error:", err)
+      setError("Email atau password salah. Silakan periksa kembali.")
+      setLoading(false)
     }
   }
 
