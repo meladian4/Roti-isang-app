@@ -57,8 +57,10 @@ const nextAuth = NextAuth({
     },
     async session({ session, token }) {
       if (session.user) {
-        (session.user as { role?: string; id?: string }).role = (token.role as string) || "ADMIN"
-        (session.user as { role?: string; id?: string }).id = (token.id as string) || "admin-id"
+        Object.assign(session.user, {
+          role: (token.role as string) || "ADMIN",
+          id: (token.id as string) || "admin-id",
+        })
       }
       return session
     },
