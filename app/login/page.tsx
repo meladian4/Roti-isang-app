@@ -21,17 +21,28 @@ export default function LoginPage() {
     setLoading(true)
     setError("")
 
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    })
+    try {
+      const result = await signIn("credentials", {
+        email: email.trim(),
+        password: password.trim(),
+        redirect: false,
+        redirectTo: "/dashboard",
+      })
 
-    if (result?.error) {
-      setError("Email atau password salah. Silakan periksa kembali.")
-      setLoading(false)
-    } else {
-      router.push("/dashboard")
+      if (result?.error) {
+        setError("Email atau password salah. Silakan periksa kembali.")
+        setLoading(false)
+      } else {
+        window.location.href = "/dashboard"
+      }
+    } catch (err: any) {
+      console.error("Login error:", err)
+      if (err?.message?.includes("CredentialsSignin") || err?.type === "CredentialsSignin") {
+        setError("Email atau password salah. Silakan periksa kembali.")
+        setLoading(false)
+      } else {
+        window.location.href = "/dashboard"
+      }
     }
   }
 
