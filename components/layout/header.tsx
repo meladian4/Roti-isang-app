@@ -12,14 +12,14 @@ export function Header({ title, description }: HeaderProps) {
   const { data: session } = useSession()
 
   return (
-    <header className="sticky top-0 z-10 flex items-center justify-between px-8 py-5 bg-white/75 backdrop-blur-md border-b border-orange-500/10 shadow-sm shadow-orange-950/5">
+    <header className="sticky top-0 z-10 flex items-center justify-between px-4 sm:px-8 py-3.5 sm:py-5 bg-white/80 backdrop-blur-md border-b border-emerald-500/10 shadow-xs">
       <div>
-        <h2 className="text-2xl font-black tracking-tight bg-gradient-to-r from-slate-900 via-orange-950 to-slate-800 bg-clip-text text-transparent">
+        <h2 className="text-lg sm:text-2xl font-black tracking-tight bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-800 bg-clip-text text-transparent">
           {title}
         </h2>
         {description && (
-          <p className="text-xs font-medium text-slate-500 mt-0.5 flex items-center gap-1.5">
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-orange-500/80"></span>
+          <p className="text-[11px] sm:text-xs font-medium text-slate-500 mt-0.5 flex items-center gap-1.5">
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500/80"></span>
             {description}
           </p>
         )}

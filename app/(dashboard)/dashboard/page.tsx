@@ -56,7 +56,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen">
       <Header title="Dashboard Produksi & Keuangan" description="Ringkasan real-time aktivitas produksi, omset penjualan, dan Laba Bersih" />
-      <div className="p-8 space-y-8 max-w-7xl mx-auto">
+      <div className="p-4 sm:p-8 space-y-5 sm:space-y-8 max-w-7xl mx-auto">
 
         {/* Hero Banner Card - Fresh Emerald Green Theme */}
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 p-8 text-white shadow-xl shadow-emerald-950/20 border border-white/20">

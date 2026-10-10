@@ -1,4 +1,4 @@
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import "./globals.css"
 import { SessionProvider } from "next-auth/react"
 import { auth } from "@/auth"
@@ -6,6 +6,12 @@ import { auth } from "@/auth"
 export const metadata: Metadata = {
   title: "Roti Isang - Manajemen Produksi",
   description: "Sistem manajemen bahan baku dan produksi roti isang",
+}
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
