@@ -13,7 +13,16 @@ export async function GET(req: Request) {
 
   let dateFilter: { gte?: Date; lte?: Date } = {}
 
-  if (paramStartDate && paramEndDate) {
+  const monthParam = searchParams.get("month")
+  const yearParam = searchParams.get("year")
+
+  if (monthParam && yearParam) {
+    const m = parseInt(monthParam, 10)
+    const y = parseInt(yearParam, 10)
+    const start = new Date(y, m - 1, 1)
+    const end = new Date(y, m, 0, 23, 59, 59, 999)
+    dateFilter = { gte: start, lte: end }
+  } else if (paramStartDate && paramEndDate) {
     dateFilter = {
       gte: new Date(paramStartDate),
       lte: new Date(`${paramEndDate}T23:59:59.999Z`),
@@ -34,7 +43,18 @@ export async function GET(req: Request) {
     dateFilter = { gte: start }
   }
 
-  const [productions, stockMovements, ingredients, sales, returns] = await Promise.all([
+  let checkM: number | null = null
+  let checkY: number | null = null
+  if (monthParam && yearParam) {
+    checkM = parseInt(monthParam, 10)
+    checkY = parseInt(yearParam, 10)
+  } else if (period === "month") {
+    const now = new Date()
+    checkM = now.getMonth() + 1
+    checkY = now.getFullYear()
+  }
+
+  const [productions, stockMovements, ingredients, sales, returns, operationalExpenses, closedMonth] = await Promise.all([
     prisma.production.findMany({
       where: { date: dateFilter },
       include: { recipe: true, ingredients: { include: { ingredient: true } } },
@@ -48,14 +68,24 @@ export async function GET(req: Request) {
     prisma.ingredient.findMany({ orderBy: { name: "asc" } }),
     prisma.sale.findMany({
       where: { date: dateFilter },
-      include: { recipe: true, user: { select: { name: true } } },
+      include: { recipe: true, agent: true, user: { select: { name: true } } },
       orderBy: { date: "desc" },
     }),
     prisma.saleReturn.findMany({
       where: { date: dateFilter },
-      include: { recipe: true, user: { select: { name: true } } },
+      include: { recipe: true, agent: true, user: { select: { name: true } } },
       orderBy: { date: "desc" },
     }),
+    prisma.operationalExpense.findMany({
+      where: { date: dateFilter },
+      include: { user: { select: { name: true } } },
+      orderBy: { date: "desc" },
+    }),
+    checkM && checkY
+      ? prisma.closedMonth.findUnique({
+          where: { month_year: { month: checkM, year: checkY } },
+        })
+      : Promise.resolve(null),
   ])
 
   const totalCost = productions.reduce((sum, p) => sum + p.totalCost, 0)
@@ -64,7 +94,11 @@ export async function GET(req: Request) {
   const totalSalesQty = sales.reduce((sum, s) => sum + s.quantity, 0)
   const totalReturnLoss = returns.reduce((sum, r) => sum + r.lossAmount, 0)
   const totalReturnQty = returns.reduce((sum, r) => sum + r.quantity, 0)
-  const netProfit = totalRevenue - totalCost - totalReturnLoss
+  const totalOperationalExpense = operationalExpenses.reduce((sum, e) => sum + e.amount, 0)
+  const totalInventoryValue = ingredients.reduce((sum, i) => sum + i.currentStock * i.pricePerUnit, 0)
+
+  // Buku Besar Net Profit Akhir = Omset - HPP Produksi - Kerugian Retur - Beban Operasional
+  const netProfit = totalRevenue - totalCost - totalReturnLoss - totalOperationalExpense
 
   // Ingredient usage summary
   const ingredientUsage: Record<string, { name: string; unit: string; totalUsed: number; totalCost: number }> = {}
@@ -83,13 +117,13 @@ export async function GET(req: Request) {
     }
   }
 
-  // Daily financial chart data (omset, hpp, retur, laba)
-  const dailyFinancials: Record<string, { date: string; revenue: number; cost: number; returnLoss: number; profit: number }> = {}
+  // Daily financial chart data (omset, hpp, retur, operasional, laba)
+  const dailyFinancials: Record<string, { date: string; revenue: number; cost: number; returnLoss: number; operational: number; profit: number }> = {}
 
   for (const p of productions) {
     const dateKey = p.date.toISOString().split("T")[0]
     if (!dailyFinancials[dateKey]) {
-      dailyFinancials[dateKey] = { date: dateKey, revenue: 0, cost: 0, returnLoss: 0, profit: 0 }
+      dailyFinancials[dateKey] = { date: dateKey, revenue: 0, cost: 0, returnLoss: 0, operational: 0, profit: 0 }
     }
     dailyFinancials[dateKey].cost += p.totalCost
   }
@@ -97,7 +131,7 @@ export async function GET(req: Request) {
   for (const s of sales) {
     const dateKey = s.date.toISOString().split("T")[0]
     if (!dailyFinancials[dateKey]) {
-      dailyFinancials[dateKey] = { date: dateKey, revenue: 0, cost: 0, returnLoss: 0, profit: 0 }
+      dailyFinancials[dateKey] = { date: dateKey, revenue: 0, cost: 0, returnLoss: 0, operational: 0, profit: 0 }
     }
     dailyFinancials[dateKey].revenue += s.totalAmount
   }
@@ -105,17 +139,25 @@ export async function GET(req: Request) {
   for (const r of returns) {
     const dateKey = r.date.toISOString().split("T")[0]
     if (!dailyFinancials[dateKey]) {
-      dailyFinancials[dateKey] = { date: dateKey, revenue: 0, cost: 0, returnLoss: 0, profit: 0 }
+      dailyFinancials[dateKey] = { date: dateKey, revenue: 0, cost: 0, returnLoss: 0, operational: 0, profit: 0 }
     }
     dailyFinancials[dateKey].returnLoss += r.lossAmount
   }
 
-  // Compute profit per day
+  for (const e of operationalExpenses) {
+    const dateKey = e.date.toISOString().split("T")[0]
+    if (!dailyFinancials[dateKey]) {
+      dailyFinancials[dateKey] = { date: dateKey, revenue: 0, cost: 0, returnLoss: 0, operational: 0, profit: 0 }
+    }
+    dailyFinancials[dateKey].operational += e.amount
+  }
+
+  // Compute profit per day for General Ledger
   const dailyData = Object.values(dailyFinancials)
     .sort((a, b) => a.date.localeCompare(b.date))
     .map((d) => ({
       ...d,
-      profit: d.revenue - d.cost - d.returnLoss,
+      profit: d.revenue - d.cost - d.returnLoss - d.operational,
     }))
 
   return NextResponse.json({
@@ -127,11 +169,15 @@ export async function GET(req: Request) {
       totalSalesQty,
       totalReturnLoss,
       totalReturnQty,
+      totalOperationalExpense,
+      totalInventoryValue,
       netProfit,
+      isLocked: !!closedMonth,
     },
     productions,
     sales,
     returns,
+    operationalExpenses,
     ingredientUsage: Object.values(ingredientUsage),
     dailyData,
     lowStockIngredients: ingredients.filter((i) => i.currentStock <= i.minStock),

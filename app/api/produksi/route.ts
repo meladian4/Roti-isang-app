@@ -77,6 +77,20 @@ export async function POST(req: Request) {
       )
     }
 
+    // Validate valid user ID in database
+    let validUserId: string | null = null
+    const userEmail = session?.user?.email || "admin@rotisang.com"
+    
+    if (userId && userId !== "admin-id") {
+      const userExists = await prisma.user.findUnique({ where: { id: userId } })
+      if (userExists) validUserId = userExists.id
+    }
+    
+    if (!validUserId && userEmail) {
+      const dbUser = await prisma.user.findUnique({ where: { email: userEmail } })
+      if (dbUser) validUserId = dbUser.id
+    }
+
     const production = await prisma.production.create({
       data: {
         date: date ? new Date(date) : undefined,
@@ -84,7 +98,7 @@ export async function POST(req: Request) {
         batchCount: batches,
         totalCost,
         notes,
-        userId,
+        userId: validUserId,
         ingredients: { create: productionIngredients },
       },
       include: {

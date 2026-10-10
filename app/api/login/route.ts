@@ -26,7 +26,7 @@ export async function POST(req: Request) {
         }),
         {
           httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
+          secure: false,
           sameSite: "lax",
           path: "/",
           maxAge: 60 * 60 * 24 * 30, // 30 days
@@ -63,7 +63,7 @@ export async function POST(req: Request) {
       JSON.stringify({ id: user.id, email: user.email, name: user.name, role: user.role }),
       {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: false,
         sameSite: "lax",
         path: "/",
         maxAge: 60 * 60 * 24 * 30,

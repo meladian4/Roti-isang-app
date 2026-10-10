@@ -10,35 +10,60 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   const data = await req.json()
 
   try {
-    const qty = parseInt(data.quantity) || 1
-    let lossAmount = parseFloat(data.lossAmount) || 0
+    const qty = parseInt(data.quantity?.toString() || "1", 10) || 1
+    let lossAmount = 0
+    let validRecipeId: string | null = null
 
-    // Re-estimate loss amount if recipe is linked and lossAmount is 0
-    if (data.recipeId && !lossAmount) {
-      const recipe = await prisma.recipe.findUnique({
+    let recipe = null
+    if (data.recipeId && data.recipeId.trim() !== "") {
+      recipe = await prisma.recipe.findUnique({
         where: { id: data.recipeId },
         include: { ingredients: { include: { ingredient: true } } },
       })
-      if (recipe) {
-        const batchCost = recipe.ingredients.reduce(
-          (sum, ri) => sum + ri.quantity * ri.ingredient.pricePerUnit,
-          0
-        )
-        const costPerUnit = recipe.servingsPerBatch > 0 ? batchCost / recipe.servingsPerBatch : 0
-        lossAmount = qty * costPerUnit
-      }
+    }
+    
+    if (!recipe && data.recipeName) {
+      recipe = await prisma.recipe.findFirst({
+        where: { name: data.recipeName },
+        include: { ingredients: { include: { ingredient: true } } },
+      })
+    }
+
+    if (recipe) {
+      validRecipeId = recipe.id
+      const batchCost = recipe.ingredients.reduce(
+        (sum, ri) => sum + ri.quantity * ri.ingredient.pricePerUnit,
+        0
+      )
+      const costPerUnit = recipe.servingsPerBatch > 0 ? batchCost / recipe.servingsPerBatch : 0
+      lossAmount = qty * costPerUnit
+    } else if (data.lossAmount) {
+      const cleanLossStr = data.lossAmount.toString().replace(/\./g, "").replace(",", ".")
+      lossAmount = parseFloat(cleanLossStr) || 0
+    }
+
+    let validAgentId: string | null = null
+    if (data.agentId && data.agentId.trim() !== "") {
+      const agentExists = await prisma.marketingAgent.findUnique({ where: { id: data.agentId } })
+      if (agentExists) validAgentId = agentExists.id
     }
 
     const saleReturn = await prisma.saleReturn.update({
       where: { id },
       data: {
         date: data.date ? new Date(data.date) : undefined,
-        recipeId: data.recipeId || null,
-        recipeName: data.recipeName || "Roti Isang",
+        recipeId: validRecipeId,
+        recipeName: data.recipeName || recipe?.name || "Roti Isang",
         quantity: qty,
-        reason: data.reason || "Kadaluarsa",
+        reason: data.reason || "Kadaluarsa (Expired)",
         lossAmount,
         notes: data.notes || null,
+        agentId: validAgentId,
+      },
+      include: {
+        recipe: true,
+        agent: true,
+        user: { select: { name: true, email: true } },
       },
     })
     return NextResponse.json(saleReturn)

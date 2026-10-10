@@ -21,18 +21,37 @@ export default function LoginPage() {
     setLoading(true)
     setError("")
 
+    const cleanEmail = email.trim().toLowerCase()
+    const cleanPassword = password.trim()
+
     try {
-      await fetch("/api/login", {
+      // 1. Call NextAuth signIn
+      const result = await signIn("credentials", {
+        email: cleanEmail,
+        password: cleanPassword,
+        redirect: false,
+      })
+
+      // 2. Call direct login route to set fallback cookie
+      const apiRes = await fetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), password: password.trim() }),
+        body: JSON.stringify({ email: cleanEmail, password: cleanPassword }),
       })
-    } catch (e) {
-      console.error(e)
-    }
+      const apiData = await apiRes.json()
 
-    // Direct guaranteed navigation to dashboard
-    window.location.href = "/dashboard"
+      if (result?.error || !apiRes.ok || !apiData.success) {
+        setError(apiData.error || "Email atau password salah. Silakan periksa kembali.")
+        setLoading(false)
+        return
+      }
+
+      window.location.href = "/dashboard"
+    } catch (err) {
+      console.error("Login handle error:", err)
+      setError("Terjadi kesalahan saat masuk. Silakan coba lagi.")
+      setLoading(false)
+    }
   }
 
   return (

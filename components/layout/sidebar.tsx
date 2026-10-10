@@ -10,7 +10,7 @@ import {
   Factory,
   ShoppingBag,
   BarChart3,
-  Bot,
+  Wallet,
   LogOut,
   Wheat,
   Sparkles,
@@ -22,9 +22,9 @@ const navItems = [
   { href: "/resep", label: "Resep", icon: BookOpen, badge: null },
   { href: "/bahan-baku", label: "Bahan Baku", icon: Package, badge: null },
   { href: "/produksi", label: "Produksi", icon: Factory, badge: null },
-  { href: "/penjualan", label: "Penjualan & Retur", icon: ShoppingBag, badge: "AKTIF" },
-  { href: "/laporan", label: "Laporan Keuangan", icon: BarChart3, badge: null },
-  { href: "/ai-assistant", label: "AI Assistant", icon: Bot, badge: "AI" },
+  { href: "/penjualan", label: "Penjualan & Retur", icon: ShoppingBag, badge: null },
+  { href: "/operasional", label: "Beban Operasional", icon: Wallet, badge: "BARU" },
+  { href: "/laporan", label: "Laporan & Buku Besar", icon: BarChart3, badge: null },
 ]
 
 export function Sidebar() {

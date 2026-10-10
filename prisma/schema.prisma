@@ -8,16 +8,28 @@ datasource db {
 }
 
 model User {
-  id            String       @id @default(cuid())
-  name          String?
-  email         String       @unique
-  password      String
-  role          String       @default("OPERATOR") // ADMIN | OPERATOR
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  productions   Production[]
-  sales         Sale[]
-  returns       SaleReturn[]
+  id                  String               @id @default(cuid())
+  name                String?
+  email               String               @unique
+  password            String
+  role                String               @default("OPERATOR") // ADMIN | OPERATOR
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  productions         Production[]
+  sales               Sale[]
+  returns             SaleReturn[]
+  operationalExpenses OperationalExpense[]
+  closedMonths        ClosedMonth[]
+}
+
+model MarketingAgent {
+  id        String       @id @default(cuid())
+  name      String
+  code      String?
+  sales     Sale[]
+  returns   SaleReturn[]
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
 }
 
 model Ingredient {
@@ -91,31 +103,61 @@ model ProductionIngredient {
 }
 
 model Sale {
-  id            String   @id @default(cuid())
+  id            String          @id @default(cuid())
   recipeId      String?
   recipeName    String
-  quantity      Int      // Total pcs sold
-  pricePerUnit  Float    // Selling price per pcs
-  totalAmount   Float    // Total revenue (quantity * pricePerUnit)
+  quantity      Int             // Total pcs sold
+  pricePerUnit  Float           // Selling price per pcs
+  totalAmount   Float           // Total revenue (quantity * pricePerUnit)
   notes         String?
-  date          DateTime @default(now())
-  createdAt     DateTime @default(now())
-  recipe        Recipe?  @relation(fields: [recipeId], references: [id])
-  user          User?    @relation(fields: [userId], references: [id])
+  date          DateTime        @default(now())
+  createdAt     DateTime        @default(now())
+  recipe        Recipe?         @relation(fields: [recipeId], references: [id])
+  user          User?           @relation(fields: [userId], references: [id])
   userId        String?
+  agentId       String?
+  agent         MarketingAgent? @relation(fields: [agentId], references: [id])
 }
 
 model SaleReturn {
-  id            String   @id @default(cuid())
+  id            String          @id @default(cuid())
   recipeId      String?
   recipeName    String
-  quantity      Int      // Total pcs returned
-  reason        String?  // Expired, Rusak, CACAT, Ditolak toko
-  lossAmount    Float    @default(0) // Kerugian retur
+  quantity      Int             // Total pcs returned
+  reason        String?         // Expired, Rusak, CACAT, Ditolak toko
+  lossAmount    Float           @default(0) // Kerugian retur
   notes         String?
-  date          DateTime @default(now())
-  createdAt     DateTime @default(now())
-  recipe        Recipe?  @relation(fields: [recipeId], references: [id])
-  user          User?    @relation(fields: [userId], references: [id])
+  date          DateTime        @default(now())
+  createdAt     DateTime        @default(now())
+  recipe        Recipe?         @relation(fields: [recipeId], references: [id])
+  user          User?           @relation(fields: [userId], references: [id])
   userId        String?
+  agentId       String?
+  agent         MarketingAgent? @relation(fields: [agentId], references: [id])
+}
+
+model OperationalExpense {
+  id          String   @id @default(cuid())
+  name        String   // Nama barang/beban (e.g. Plastik Pembungkus, Gas LPG, Listrik, Gaji, dll)
+  category    String   // Kemasan, Bahan Bakar, Operasional Toko, Gaji & Transport, Lainnya
+  quantity    Float    @default(1)
+  unit        String?  // pcs, kg, tabung, bulan, dll
+  amount      Float    @default(0) // Total biaya pengeluaran (Rp)
+  notes       String?
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User?    @relation(fields: [userId], references: [id])
+  userId      String?
+}
+
+model ClosedMonth {
+  id        String   @id @default(cuid())
+  month     Int
+  year      Int
+  closedAt  DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id])
+  userId    String?
+
+  @@unique([month, year])
 }

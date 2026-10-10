@@ -90,6 +90,23 @@ async function main() {
     console.log('✓ Resep (sudah ada): Roti Isang Original')
   }
 
+  // Create 3 Marketing Agents
+  const agentsData = [
+    { name: "Marketing Agent A (Toko A / Konsinyasi)", code: "MKT-A" },
+    { name: "Marketing Agent B (Toko B / Reseller)", code: "MKT-B" },
+    { name: "Marketing Agent C (Toko C / Outlet)", code: "MKT-C" },
+  ]
+
+  for (const ag of agentsData) {
+    const existing = await prisma.marketingAgent.findFirst({ where: { name: ag.name } })
+    if (!existing) {
+      await prisma.marketingAgent.create({ data: ag })
+      console.log(`✓ Marketing Agent: ${ag.name}`)
+    } else {
+      console.log(`✓ Marketing Agent (sudah ada): ${ag.name}`)
+    }
+  }
+
   console.log('\n✅ Seeding selesai!')
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━')
   console.log('Login dengan:')

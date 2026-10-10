@@ -12,14 +12,14 @@ import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { formatCurrency, formatNumber, formatDate } from "@/lib/utils"
-import { Plus, Pencil, Trash2, Factory, CheckCircle, XCircle, Calculator, Sparkles, Activity, ChefHat, Scale } from "lucide-react"
+import { Plus, Pencil, Trash2, Factory, CheckCircle, XCircle, Calculator, ChefHat, Scale, PieChart, Layers } from "lucide-react"
 
 interface Ingredient { id: string; name: string; unit: string; currentStock: number; pricePerUnit: number }
 interface RecipeIngredient { ingredientId: string; quantity: number; ingredient: Ingredient }
 interface Recipe { id: string; name: string; servingsPerBatch: number; ingredients: RecipeIngredient[] }
 interface Production {
   id: string; date: string; batchCount: number; totalCost: number; notes: string | null
-  recipe: { name: string }; user: { name: string | null } | null
+  recipe: { name: string; servingsPerBatch?: number }; user: { name: string | null } | null
   ingredients: Array<{ quantity: number; priceAtTime: number; ingredient: { name: string; unit: string } }>
 }
 
@@ -33,15 +33,16 @@ export default function ProduksiPage() {
   const [openDialog, setOpenDialog] = useState(false)
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null)
   
-  // Production Inputs: Adonan & Loyang
-  const [adonanCount, setAdonanCount] = useState("1")
-  const [loyangPerAdonan, setLoyangPerAdonan] = useState("1")
-  const [batchCount, setBatchCount] = useState("1")
+  // Production Input: Target Pcs Roti (Replacing Tray/Loyang)
+  const [targetPcs, setTargetPcs] = useState("20")
   
   const [notes, setNotes] = useState("")
   const [prodDate, setProdDate] = useState("")
   const [calcRows, setCalcRows] = useState<CalcRow[]>([])
   const [totalCost, setTotalCost] = useState(0)
+  const [batchMultiplier, setBatchMultiplier] = useState(1)
+  const [totalDoughGram, setTotalDoughGram] = useState(0)
+  const [gramPerPcs, setGramPerPcs] = useState(0)
   const [saving, setSaving] = useState(false)
   const [successMsg, setSuccessMsg] = useState("")
 
@@ -49,7 +50,7 @@ export default function ProduksiPage() {
   const [openEditDialog, setOpenEditDialog] = useState(false)
   const [editProdItem, setEditProdItem] = useState<Production | null>(null)
   const [editNotes, setEditNotes] = useState("")
-  const [editLoyang, setEditLoyang] = useState("1")
+  const [editPcs, setEditPcs] = useState("20")
   const [editDate, setEditDate] = useState("")
   const [savingEdit, setSavingEdit] = useState(false)
 
@@ -59,40 +60,70 @@ export default function ProduksiPage() {
   }
   useEffect(() => { fetchData() }, [])
 
-  const calculate = (recipe: Recipe | null, totalLoyang: string) => {
-    if (!recipe || !totalLoyang) { setCalcRows([]); setTotalCost(0); return }
-    const b = parseInt(totalLoyang) || 1
+  const calculateDough = (recipe: Recipe | null, pcsInput: string) => {
+    if (!recipe || !pcsInput) {
+      setCalcRows([])
+      setTotalCost(0)
+      setBatchMultiplier(0)
+      setTotalDoughGram(0)
+      setGramPerPcs(0)
+      return
+    }
+
+    const pcsTarget = parseInt(pcsInput, 10) || 1
+    const baseServings = recipe.servingsPerBatch > 0 ? recipe.servingsPerBatch : 1
+    
+    // Multiplier ratio based on Target Pcs divided by Recipe Base Servings
+    const ratio = pcsTarget / baseServings
+    setBatchMultiplier(ratio)
+
     let cost = 0
+    let doughWeightSumGram = 0
+
     const rows: CalcRow[] = recipe.ingredients.map(ri => {
-      const needed = ri.quantity * b
+      const needed = ri.quantity * ratio
       const available = ri.ingredient.currentStock
       const itemCost = needed * ri.ingredient.pricePerUnit
       cost += itemCost
-      return { name: ri.ingredient.name, unit: ri.ingredient.unit, needed, available, ok: available >= needed, cost: itemCost }
+
+      // Calculate dough weight in grams for ingredients measured in gram/kg
+      if (ri.ingredient.unit.toLowerCase() === "gram") {
+        doughWeightSumGram += needed
+      } else if (ri.ingredient.unit.toLowerCase() === "kg") {
+        doughWeightSumGram += needed * 1000
+      }
+
+      return {
+        name: ri.ingredient.name,
+        unit: ri.ingredient.unit,
+        needed,
+        available,
+        ok: available >= needed,
+        cost: itemCost,
+      }
     })
+
     setCalcRows(rows)
     setTotalCost(cost)
+    setTotalDoughGram(doughWeightSumGram)
+    setGramPerPcs(pcsTarget > 0 ? doughWeightSumGram / pcsTarget : 0)
   }
 
   const handleRecipeChange = (id: string) => {
     const r = recipes.find(r => r.id === id) || null
     setSelectedRecipe(r)
-    calculate(r, batchCount)
+    if (r) {
+      const defaultPcs = r.servingsPerBatch.toString()
+      setTargetPcs(defaultPcs)
+      calculateDough(r, defaultPcs)
+    } else {
+      calculateDough(null, targetPcs)
+    }
   }
 
-  const handleAdonanChange = (adonanVal: string, loyangVal: string) => {
-    const a = parseInt(adonanVal) || 1
-    const l = parseInt(loyangVal) || 1
-    const totalLoyang = (a * l).toString()
-    setAdonanCount(adonanVal)
-    setLoyangPerAdonan(loyangVal)
-    setBatchCount(totalLoyang)
-    calculate(selectedRecipe, totalLoyang)
-  }
-
-  const handleLoyangDirectChange = (val: string) => {
-    setBatchCount(val)
-    calculate(selectedRecipe, val)
+  const handlePcsChange = (pcsVal: string) => {
+    setTargetPcs(pcsVal)
+    calculateDough(selectedRecipe, pcsVal)
   }
 
   const canProduce = calcRows.length > 0 && calcRows.every(r => r.ok)
@@ -102,14 +133,19 @@ export default function ProduksiPage() {
     if (!selectedRecipe) return
     setSaving(true)
 
-    const fullNotes = `[${adonanCount}x Adonan] ${notes}`.trim()
+    const pcsNum = parseInt(targetPcs, 10) || 1
+    const baseServings = selectedRecipe.servingsPerBatch > 0 ? selectedRecipe.servingsPerBatch : 1
+    // batchCount is calculated ratio for backend recipe ingredient deduction
+    const batchCountCalc = Math.max(1, Math.round(pcsNum / baseServings))
+
+    const fullNotes = `[Target: ${pcsNum} pcs roti | ${totalDoughGram.toFixed(0)}g adonan] ${notes}`.trim()
 
     const res = await fetch("/api/produksi", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         recipeId: selectedRecipe.id,
-        batchCount: parseInt(batchCount),
+        batchCount: batchCountCalc,
         notes: fullNotes,
         date: prodDate || undefined,
         userId: (session?.user as { id?: string })?.id,
@@ -117,16 +153,14 @@ export default function ProduksiPage() {
     })
     const data = await res.json()
     if (!res.ok) {
-      alert(data.error)
+      alert(data.error || "Gagal mencatat produksi")
       setSaving(false)
       return
     }
-    setSuccessMsg(`Produksi berhasil dicatat! ${adonanCount}x Adonan (${batchCount} Loyang ${selectedRecipe.name}) = ${formatCurrency(data.totalCost)}`)
+    setSuccessMsg(`Produksi berhasil dicatat! Target ${pcsNum} Pcs ${selectedRecipe.name} (${totalDoughGram.toFixed(0)}g adonan) = ${formatCurrency(data.totalCost)}`)
     setOpenDialog(false)
     setSelectedRecipe(null)
-    setAdonanCount("1")
-    setLoyangPerAdonan("1")
-    setBatchCount("1")
+    setTargetPcs("20")
     setNotes("")
     setProdDate("")
     setCalcRows([])
@@ -138,7 +172,8 @@ export default function ProduksiPage() {
   const openEditProduction = (item: Production) => {
     setEditProdItem(item)
     setEditNotes(item.notes || "")
-    setEditLoyang(item.batchCount.toString())
+    const servings = item.recipe?.servingsPerBatch || 20
+    setEditPcs((item.batchCount * servings).toString())
     setEditDate(item.date ? new Date(item.date).toISOString().split("T")[0] : "")
     setOpenEditDialog(true)
   }
@@ -148,12 +183,16 @@ export default function ProduksiPage() {
     if (!editProdItem) return
     setSavingEdit(true)
 
+    const pcsNum = parseInt(editPcs, 10) || 1
+    const servings = editProdItem.recipe?.servingsPerBatch || 20
+    const batchCalc = Math.max(1, Math.round(pcsNum / servings))
+
     const res = await fetch(`/api/produksi/${editProdItem.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         date: editDate || undefined,
-        batchCount: editLoyang,
+        batchCount: batchCalc,
         notes: editNotes,
       }),
     })
@@ -187,7 +226,7 @@ export default function ProduksiPage() {
 
   return (
     <div className="min-h-screen">
-      <Header title="Pencatatan Produksi (Adonan & Loyang)" description="Kalkulasi otomatis kebutuhan adonan, loyang (batch), edit & hapus produksi" />
+      <Header title="Kalkulasi Adonan & Produksi Roti (Pcs)" description="Kalkulasi otomatis gramasi adonan per-pcs roti, kebutuhan bahan baku, HPP, & restok" />
       <div className="p-8 max-w-7xl mx-auto space-y-6">
 
         {successMsg && (
@@ -203,65 +242,74 @@ export default function ProduksiPage() {
             <p className="text-base font-extrabold text-slate-800">{productions.length} Sesi Produksi Terdaftar</p>
           </div>
           <Button onClick={() => setOpenDialog(true)} className="shadow-lg shadow-emerald-500/25">
-            <Calculator className="h-4 w-4" /> Hitung & Catat Produksi
+            <ChefHat className="h-4 w-4" /> Hitung & Catat Produksi (Pcs Roti)
           </Button>
         </div>
 
-        {/* Production Modal Form */}
+        {/* Production Modal Form (Per Pcs Roti) */}
         <Dialog open={openDialog} onOpenChange={setOpenDialog}>
           <DialogContent className="max-w-2xl rounded-3xl glass-panel">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-xl font-bold">
                 <ChefHat className="h-5 w-5 text-emerald-600" />
-                Kalkulasi Adonan & Batch Loyang Roti
+                Kalkulator Produksi Adonan (Per Pcs Roti)
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleProduce} className="space-y-4 mt-2">
               <div className="space-y-1.5">
-                <Label className="font-bold text-slate-700">Pilih Resep Roti</Label>
+                <Label className="font-bold text-slate-700">Pilih Resep Roti Acuan</Label>
                 <Select onValueChange={handleRecipeChange}>
                   <SelectTrigger className="rounded-xl"><SelectValue placeholder="Pilih resep roti..." /></SelectTrigger>
-                  <SelectContent>{recipes.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}</SelectContent>
+                  <SelectContent>{recipes.map(r => <SelectItem key={r.id} value={r.id}>{r.name} (Acuan: {r.servingsPerBatch} pcs/batch)</SelectItem>)}</SelectContent>
                 </Select>
               </div>
 
-              {/* Dual Input: 1x Adonan vs Jumlah Loyang (Batch) */}
-              <div className="p-4 bg-emerald-50/60 border border-emerald-200/80 rounded-2xl space-y-3">
-                <div className="flex items-center gap-2">
-                  <Scale className="h-4 w-4 text-emerald-700" />
-                  <h4 className="text-xs font-black uppercase text-emerald-800 tracking-wider">Takaran Sesi Adonan & Loyang</h4>
+              {/* Target Input: Pcs Roti */}
+              <div className="p-4 bg-emerald-50/70 border border-emerald-200/80 rounded-2xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Scale className="h-4 w-4 text-emerald-700" />
+                    <h4 className="text-xs font-black uppercase text-emerald-800 tracking-wider">Target Produksi Roti</h4>
+                  </div>
+                  {selectedRecipe && (
+                    <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 font-bold text-[10px]">
+                      1 Batch Standard = {selectedRecipe.servingsPerBatch} Pcs
+                    </Badge>
+                  )}
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <Label className="text-xs font-bold text-slate-700">1x Adonan (Kali Mix)</Label>
+                    <Label className="text-xs font-bold text-slate-700">Berapa Pcs Roti Yang Ingin Dibuat?</Label>
                     <Input
                       type="number"
                       min="1"
-                      value={adonanCount}
-                      onChange={e => handleAdonanChange(e.target.value, loyangPerAdonan)}
-                      className="rounded-xl bg-white"
+                      placeholder="Contoh: 100"
+                      value={targetPcs}
+                      onChange={e => handlePcsChange(e.target.value)}
+                      className="rounded-xl bg-white font-extrabold text-emerald-800 text-lg h-11 border-emerald-300"
+                      required
                     />
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-bold text-slate-700">Loyang per 1x Adonan</Label>
-                    <Input
-                      type="number"
-                      min="1"
-                      value={loyangPerAdonan}
-                      onChange={e => handleAdonanChange(adonanCount, e.target.value)}
-                      className="rounded-xl bg-white"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-bold text-slate-700">Total Loyang (Batch)</Label>
-                    <Input
-                      type="number"
-                      min="1"
-                      value={batchCount}
-                      onChange={e => handleLoyangDirectChange(e.target.value)}
-                      className="rounded-xl bg-emerald-100/80 font-bold text-emerald-800"
-                    />
-                  </div>
+
+                  {selectedRecipe && (
+                    <div className="p-3 bg-white/80 rounded-xl border border-emerald-100 flex flex-col justify-center space-y-1 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-slate-500 font-medium">Estimasi Berat Adonan:</span>
+                        <span className="font-black text-emerald-700">
+                          {totalDoughGram >= 1000 ? `${(totalDoughGram / 1000).toFixed(2)} kg` : `${totalDoughGram.toFixed(0)} gram`}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500 font-medium">Gramasi Adonan / Pcs:</span>
+                        <span className="font-bold text-slate-800">{gramPerPcs.toFixed(1)} gram / pcs</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500 font-medium">Faktor Skala Batch:</span>
+                        <span className="font-bold text-slate-800">{batchMultiplier.toFixed(2)}x lipat resep</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -269,9 +317,9 @@ export default function ProduksiPage() {
               {calcRows.length > 0 && (
                 <div className="border border-emerald-200/80 rounded-2xl overflow-hidden bg-white/90 shadow-sm">
                   <div className="bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2.5 text-white flex justify-between items-center">
-                    <h4 className="text-xs font-extrabold uppercase tracking-wider">Kebutuhan Bahan Baku ({adonanCount}x Adonan)</h4>
+                    <h4 className="text-xs font-extrabold uppercase tracking-wider">Kebutuhan Gramasi Bahan Baku ({targetPcs} Pcs Roti)</h4>
                     <span className="text-xs font-bold bg-white/20 backdrop-blur-xs px-2.5 py-0.5 rounded-full">
-                      Total Output: {parseInt(batchCount) * (selectedRecipe?.servingsPerBatch || 1)} pcs ({batchCount} Loyang)
+                      HPP / Pcs: {formatCurrency(totalCost / (parseInt(targetPcs, 10) || 1))}
                     </span>
                   </div>
                   <div className="divide-y divide-slate-100 max-h-56 overflow-y-auto">
@@ -291,7 +339,7 @@ export default function ProduksiPage() {
                     ))}
                   </div>
                   <div className="bg-emerald-50/80 px-4 py-3 border-t border-emerald-200/60 flex justify-between items-center">
-                    <span className="text-xs font-bold text-slate-700">Estimasi Total Biaya HPP Produksi:</span>
+                    <span className="text-xs font-bold text-slate-700">Total HPP Produksi ({targetPcs} Pcs):</span>
                     <span className="text-lg font-black text-emerald-700">{formatCurrency(totalCost)}</span>
                   </div>
                 </div>
@@ -299,7 +347,7 @@ export default function ProduksiPage() {
 
               {calcRows.length > 0 && !canProduce && (
                 <div className="p-3 bg-rose-500 text-white rounded-xl text-xs font-bold shadow-sm">
-                  ⚠️ Stok bahan baku tidak mencukupi untuk jumlah adonan/loyang ini. Restok terlebih dahulu!
+                  ⚠️ Stok bahan baku tidak mencukupi untuk membuat {targetPcs} pcs roti ini. Silakan kurangi jumlah atau tambahkan stok terlebih dahulu!
                 </div>
               )}
 
@@ -310,11 +358,11 @@ export default function ProduksiPage() {
 
               <div className="space-y-1.5">
                 <Label className="font-bold text-slate-700">Catatan Produksi (Opsional)</Label>
-                <Textarea placeholder="Catatan shift adonan, pembuat, dll..." value={notes} onChange={e => setNotes(e.target.value)} rows={2} className="rounded-xl" />
+                <Textarea placeholder="Catatan adonan, shift, pembuat..." value={notes} onChange={e => setNotes(e.target.value)} rows={2} className="rounded-xl" />
               </div>
 
               <Button type="submit" className="w-full rounded-xl" disabled={saving || !canProduce || !selectedRecipe}>
-                {saving ? "Memproses Adonan..." : canProduce ? `Konfirmasi & Produksi ${adonanCount}x Adonan (${batchCount} Loyang)` : "Stok Tidak Mencukupi"}
+                {saving ? "Memproses Adonan..." : canProduce ? `Konfirmasi & Produksi ${targetPcs} Pcs Roti` : "Stok Tidak Mencukupi"}
               </Button>
             </form>
           </DialogContent>
@@ -339,8 +387,8 @@ export default function ProduksiPage() {
                 <Input value={editProdItem?.recipe.name || ""} disabled className="rounded-xl bg-slate-100 font-bold" />
               </div>
               <div className="space-y-1.5">
-                <Label className="font-bold text-slate-700">Jumlah Loyang (Batch)</Label>
-                <Input type="number" min="1" value={editLoyang} onChange={e => setEditLoyang(e.target.value)} required className="rounded-xl" />
+                <Label className="font-bold text-slate-700">Total Pcs Roti Dibuat</Label>
+                <Input type="number" min="1" value={editPcs} onChange={e => setEditPcs(e.target.value)} required className="rounded-xl" />
               </div>
               <div className="space-y-1.5">
                 <Label className="font-bold text-slate-700">Catatan Sesi</Label>
@@ -358,9 +406,9 @@ export default function ProduksiPage() {
           <CardHeader className="bg-gradient-to-r from-emerald-50/90 to-teal-50/60 border-b border-emerald-100 py-5">
             <CardTitle className="text-lg font-bold flex items-center gap-2 text-slate-800">
               <div className="p-2 bg-emerald-600 text-white rounded-xl shadow-xs">
-                <Activity className="h-4 w-4" />
+                <Factory className="h-4 w-4" />
               </div>
-              Riwayat Produksi Harian (Adonan & Loyang)
+              Riwayat Sesi Produksi Roti Harian
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
@@ -380,37 +428,41 @@ export default function ProduksiPage() {
                   <thead>
                     <tr className="bg-slate-50/70 border-b border-slate-100 text-slate-400 font-bold uppercase text-[10px] tracking-wider">
                       <th className="text-left py-3.5 px-6">Tanggal</th>
-                      <th className="text-left py-3.5 px-6">Nama Resep</th>
-                      <th className="text-left py-3.5 px-6">Jumlah Loyang (Batch)</th>
+                      <th className="text-left py-3.5 px-6">Nama Resep Roti</th>
+                      <th className="text-left py-3.5 px-6">Pcs Dihasilkan</th>
                       <th className="text-left py-3.5 px-6">Total HPP Produksi</th>
                       <th className="text-left py-3.5 px-6">Catatan Sesi</th>
                       <th className="text-center py-3.5 px-6">Aksi</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {productions.map(p => (
-                      <tr key={p.id} className="hover:bg-emerald-50/40 transition-colors">
-                        <td className="py-4 px-6 text-slate-500 font-medium">{formatDate(p.date)}</td>
-                        <td className="py-4 px-6 font-bold text-slate-800">{p.recipe.name}</td>
-                        <td className="py-4 px-6">
-                          <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 font-bold">
-                            {p.batchCount} Loyang
-                          </Badge>
-                        </td>
-                        <td className="py-4 px-6 font-extrabold text-emerald-600">{formatCurrency(p.totalCost)}</td>
-                        <td className="py-4 px-6 text-xs font-semibold text-slate-500">{p.notes || "-"}</td>
-                        <td className="py-4 px-6 text-center">
-                          <div className="flex justify-center gap-1">
-                            <Button variant="outline" size="sm" onClick={() => openEditProduction(p)} className="rounded-xl h-8 w-8 p-0">
-                              <Pencil className="h-3.5 w-3.5 text-slate-600" />
-                            </Button>
-                            <Button variant="outline" size="sm" onClick={() => handleDeleteProduction(p.id)} className="rounded-xl h-8 w-8 p-0 text-rose-600 hover:bg-rose-50 border-rose-200">
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                    {productions.map(p => {
+                      const servings = p.recipe?.servingsPerBatch || 20
+                      const pcsProduced = p.batchCount * servings
+                      return (
+                        <tr key={p.id} className="hover:bg-emerald-50/40 transition-colors">
+                          <td className="py-4 px-6 text-slate-500 font-medium">{formatDate(p.date)}</td>
+                          <td className="py-4 px-6 font-bold text-slate-800">{p.recipe.name}</td>
+                          <td className="py-4 px-6">
+                            <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 font-bold">
+                              {pcsProduced} Pcs Roti
+                            </Badge>
+                          </td>
+                          <td className="py-4 px-6 font-extrabold text-emerald-600">{formatCurrency(p.totalCost)}</td>
+                          <td className="py-4 px-6 text-xs font-semibold text-slate-500">{p.notes || "-"}</td>
+                          <td className="py-4 px-6 text-center">
+                            <div className="flex justify-center gap-1">
+                              <Button variant="outline" size="sm" onClick={() => openEditProduction(p)} className="rounded-xl h-8 w-8 p-0">
+                                <Pencil className="h-3.5 w-3.5 text-slate-600" />
+                              </Button>
+                              <Button variant="outline" size="sm" onClick={() => handleDeleteProduction(p.id)} className="rounded-xl h-8 w-8 p-0 text-rose-600 hover:bg-rose-50 border-rose-200">
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
