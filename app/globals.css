@@ -77,13 +77,11 @@ body {
   border-color: rgba(16, 185, 129, 0.35);
 }
 
-/* Fresh Emerald Green Glass Sidebar */
+/* Fresh Emerald Green High-Performance Sidebar */
 .glass-sidebar {
-  background: linear-gradient(180deg, #064e3b 0%, #047857 50%, #059669 100%);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-right: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 10px 0 30px rgba(4, 120, 87, 0.2);
+  background: linear-gradient(180deg, #064e3b 0%, #047857 60%, #065f46 100%);
+  border-right: 1px solid rgba(255, 255, 255, 0.12);
+  will-change: width;
 }
 
 .glow-orange {

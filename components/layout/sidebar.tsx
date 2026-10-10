@@ -16,7 +16,6 @@ import {
   Wheat,
   Sparkles,
   Menu,
-  Plus,
 } from "lucide-react"
 import { signOut } from "next-auth/react"
 
@@ -72,25 +71,8 @@ export function Sidebar() {
         )}
       </div>
 
-      {/* Gmail-Style Floating Quick Action Button */}
-      <div className="p-3">
-        <Link
-          href="/produksi"
-          title={isCollapsed ? "+ Catat Produksi" : undefined}
-          className={cn(
-            "flex items-center gap-3 py-3 rounded-2xl bg-gradient-to-r from-amber-300 via-emerald-300 to-teal-200 text-emerald-950 font-extrabold shadow-lg shadow-emerald-950/30 border border-white/40 transition-all duration-300 hover:scale-[1.02] active:scale-95 group",
-            isCollapsed ? "justify-center px-3" : "px-5"
-          )}
-        >
-          <div className="p-1.5 rounded-xl bg-emerald-950/15 text-emerald-950 group-hover:rotate-90 transition-transform duration-300">
-            <Plus className="h-5 w-5" />
-          </div>
-          {!isCollapsed && <span className="text-sm tracking-wide whitespace-nowrap">Catat Produksi</span>}
-        </Link>
-      </div>
-
       {/* Navigation Items - Gmail Material You Pill Design */}
-      <nav className="flex-1 px-3 py-2 space-y-1.5 overflow-y-auto">
+      <nav className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
         {!isCollapsed && (
           <div className="px-4 py-1.5 transition-opacity duration-300">
             <p className="text-[10px] font-extrabold tracking-widest text-emerald-200/60 uppercase">Menu Utama</p>
