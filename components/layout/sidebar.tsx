@@ -19,8 +19,8 @@ import { signOut } from "next-auth/react"
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, badge: null },
-  { href: "/resep", label: "Resep", icon: BookOpen, badge: null },
   { href: "/bahan-baku", label: "Bahan Baku", icon: Package, badge: null },
+  { href: "/resep", label: "Resep", icon: BookOpen, badge: null },
   { href: "/produksi", label: "Produksi", icon: Factory, badge: null },
   { href: "/penjualan", label: "Penjualan & Retur", icon: ShoppingBag, badge: null },
   { href: "/operasional", label: "Beban Operasional", icon: Wallet, badge: "BARU" },
