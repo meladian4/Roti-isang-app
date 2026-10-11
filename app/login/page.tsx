@@ -39,16 +39,12 @@ export default function LoginPage() {
         return
       }
 
-      // 2. Also register session with NextAuth in background
-      try {
-        await signIn("credentials", {
-          email: cleanEmail,
-          password: cleanPassword,
-          redirect: false,
-        })
-      } catch (authErr) {
-        console.warn("Background auth:", authErr)
-      }
+      // 2. Fire and forget NextAuth background sync
+      signIn("credentials", {
+        email: cleanEmail,
+        password: cleanPassword,
+        redirect: false,
+      }).catch(() => {})
 
       // 3. Instant navigation to dashboard
       window.location.href = "/dashboard"
