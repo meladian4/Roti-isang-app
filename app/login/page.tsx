@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Wheat, Loader2, AlertCircle, Eye, EyeOff, Lock, Mail } from "lucide-react"
+import { Wheat, Loader2, AlertCircle, Eye, EyeOff, Lock, Mail, Sparkles } from "lucide-react"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -99,10 +99,13 @@ export default function LoginPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="Masukkan email Anda"
+                  placeholder="admin@rotisang.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   autoComplete="off"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   required
                   className="pl-10 rounded-xl bg-slate-50 border-slate-200 text-slate-900 font-medium text-sm h-11 focus:bg-white focus:border-emerald-500"
                 />
@@ -118,10 +121,13 @@ export default function LoginPage() {
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
+                  placeholder="admin123"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="new-password"
+                  autoComplete="current-password"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   required
                   className="pl-10 pr-10 rounded-xl bg-slate-50 border-slate-200 text-slate-900 font-medium text-sm h-11 focus:bg-white focus:border-emerald-500"
                 />
@@ -135,15 +141,28 @@ export default function LoginPage() {
               </div>
             </div>
 
+            {/* Quick Fill Demo / Admin Button */}
+            <button
+              type="button"
+              onClick={() => {
+                setEmail("admin@rotisang.com")
+                setPassword("admin123")
+              }}
+              className="w-full py-2.5 px-3 bg-emerald-50/80 hover:bg-emerald-100/90 text-emerald-800 border border-emerald-300/60 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-98"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-emerald-600" />
+              <span>Isi Otomatis Akun Admin (1-Klik)</span>
+            </button>
+
             <Button
               type="submit"
               disabled={loading}
-              className="w-full h-11 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold rounded-xl shadow-md shadow-emerald-600/20 transition-all text-sm mt-3"
+              className="w-full h-11 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold rounded-xl shadow-md shadow-emerald-600/20 transition-all text-sm mt-1"
             >
               {loading ? (
-                <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Memproses...</>
+                <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Memproses Masuk...</>
               ) : (
-                "Masuk"
+                "Masuk Sekarang"
               )}
             </Button>
           </form>

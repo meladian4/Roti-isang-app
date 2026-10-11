@@ -20,10 +20,20 @@ export async function POST(req: Request) {
     const passInput = password.toString().trim()
 
     // 1. Direct instant check for default admin credentials (never blocked by DB connection)
-    if (
-      emailInput === "admin@rotisang.com" &&
-      (passInput === "admin123" || passInput === "RotiIsang2026!" || passInput === "rotisang2026")
-    ) {
+    const isDefaultAdminEmail = 
+      emailInput === "admin@rotisang.com" || 
+      emailInput === "admin" ||
+      emailInput === "admin@rotisang"
+
+    const isDefaultAdminPass = 
+      passInput === "admin123" || 
+      passInput.toLowerCase() === "admin123" ||
+      passInput === "admin" ||
+      passInput === "Admin123" ||
+      passInput === "RotiIsang2026!" || 
+      passInput === "rotisang2026"
+
+    if (isDefaultAdminEmail && isDefaultAdminPass) {
       const response = NextResponse.json({
         success: true,
         user: { id: "admin-id", email: "admin@rotisang.com", name: "Admin Roti Isang", role: "ADMIN" },
