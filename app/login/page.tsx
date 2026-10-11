@@ -25,14 +25,7 @@ export default function LoginPage() {
     const cleanPassword = password.trim()
 
     try {
-      // 1. Call NextAuth signIn
-      const result = await signIn("credentials", {
-        email: cleanEmail,
-        password: cleanPassword,
-        redirect: false,
-      })
-
-      // 2. Call direct login route to set fallback cookie
+      // 1. Call robust direct login route
       const apiRes = await fetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -40,16 +33,28 @@ export default function LoginPage() {
       })
       const apiData = await apiRes.json()
 
-      if (result?.error || !apiRes.ok || !apiData.success) {
+      if (!apiRes.ok || !apiData.success) {
         setError(apiData.error || "Email atau password salah. Silakan periksa kembali.")
         setLoading(false)
         return
       }
 
+      // 2. Also register session with NextAuth in background
+      try {
+        await signIn("credentials", {
+          email: cleanEmail,
+          password: cleanPassword,
+          redirect: false,
+        })
+      } catch (authErr) {
+        console.warn("Background auth:", authErr)
+      }
+
+      // 3. Instant navigation to dashboard
       window.location.href = "/dashboard"
     } catch (err) {
       console.error("Login handle error:", err)
-      setError("Terjadi kesalahan saat masuk. Silakan coba lagi.")
+      setError("Email atau password salah. Silakan periksa kembali.")
       setLoading(false)
     }
   }
