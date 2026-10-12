@@ -1,6 +1,5 @@
 import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
-import Google from "next-auth/providers/google"
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 import { cookies } from "next/headers"
@@ -8,14 +7,6 @@ import { cookies } from "next/headers"
 const nextAuth = NextAuth({
   trustHost: true,
   providers: [
-    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
-      ? [
-          Google({
-            clientId: process.env.GOOGLE_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-          }),
-        ]
-      : []),
     CredentialsProvider({
       name: "credentials",
       credentials: {
@@ -59,44 +50,7 @@ const nextAuth = NextAuth({
     }),
   ],
   callbacks: {
-    async signIn({ user, account }) {
-      if (account?.provider === "google") {
-        const email = user.email?.toLowerCase().trim()
-        if (!email) return false
-
-        const allowedEmails = (process.env.ALLOWED_ADMIN_EMAILS || "")
-          .split(",")
-          .map((e) => e.trim().toLowerCase())
-          .filter(Boolean)
-
-        // If whitelist is set, verify email
-        if (allowedEmails.length > 0 && !allowedEmails.includes(email)) {
-          console.warn(`Unauthorized Google login attempt from: ${email}`)
-          return false
-        }
-
-        // Auto-register/sync Google user into database with ADMIN role
-        try {
-          await prisma.user.upsert({
-            where: { email },
-            update: {
-              name: user.name || "Owner Roti Isang",
-              role: "ADMIN",
-            },
-            create: {
-              email,
-              name: user.name || "Owner Roti Isang",
-              password: "",
-              role: "ADMIN",
-            },
-          })
-        } catch (e) {
-          console.error("Error upserting Google user in DB:", e)
-        }
-      }
-      return true
-    },
-    async jwt({ token, user, account }) {
+    async jwt({ token, user }) {
       if (user) {
         token.role = (user as { role?: string }).role || "ADMIN"
         token.id = user.id
