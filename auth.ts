@@ -20,13 +20,13 @@ const nextAuth = NextAuth({
         const passInput = (credentials.password as string).trim()
 
         if (
-          (emailInput === "admin@rotisang.com" || emailInput === "admin") &&
+          (emailInput === "admin@rotisang.com" || emailInput === "admin" || emailInput === "admin@ropisku.com" || emailInput === "admin@ropisku.web.id") &&
           (passInput === "admin123" || passInput.toLowerCase() === "admin123" || passInput === "admin" || passInput === "RotiIsang2026!" || passInput === "rotisang2026")
         ) {
           return {
             id: "admin-id",
             email: "admin@rotisang.com",
-            name: "Admin Roti Isang",
+            name: "Admin Ropisku",
             role: "ADMIN",
           }
         }
@@ -109,14 +109,6 @@ export async function auth() {
     }
   }
 
-  // Fallback admin session so UI works seamlessly
-  return {
-    user: {
-      id: "admin-id",
-      email: "admin@rotisang.com",
-      name: "Admin Roti Isang",
-      role: "ADMIN",
-    },
-    expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-  }
+  // No active session found - require login
+  return null
 }

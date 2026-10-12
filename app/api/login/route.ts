@@ -23,7 +23,9 @@ export async function POST(req: Request) {
     const isDefaultAdminEmail = 
       emailInput === "admin@rotisang.com" || 
       emailInput === "admin" ||
-      emailInput === "admin@rotisang"
+      emailInput === "admin@rotisang" ||
+      emailInput === "admin@ropisku.com" ||
+      emailInput === "admin@ropisku.web.id"
 
     const isDefaultAdminPass = 
       passInput === "admin123" || 
@@ -36,7 +38,7 @@ export async function POST(req: Request) {
     if (isDefaultAdminEmail && isDefaultAdminPass) {
       const response = NextResponse.json({
         success: true,
-        user: { id: "admin-id", email: "admin@rotisang.com", name: "Admin Roti Isang", role: "ADMIN" },
+        user: { id: "admin-id", email: "admin@rotisang.com", name: "Admin Ropisku", role: "ADMIN" },
       })
 
       response.cookies.set(
@@ -44,12 +46,12 @@ export async function POST(req: Request) {
         JSON.stringify({
           id: "admin-id",
           email: "admin@rotisang.com",
-          name: "Admin Roti Isang",
+          name: "Admin Ropisku",
           role: "ADMIN",
         }),
         {
           httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
+          secure: false, // Allows session on direct IP HTTP (43.153.204.115) and HTTPS domain
           sameSite: "lax",
           path: "/",
           maxAge: 60 * 60 * 24 * 30, // 30 days
@@ -84,7 +86,7 @@ export async function POST(req: Request) {
             JSON.stringify({ id: user.id, email: user.email, name: user.name, role: user.role }),
             {
               httpOnly: true,
-              secure: process.env.NODE_ENV === "production",
+              secure: false,
               sameSite: "lax",
               path: "/",
               maxAge: 60 * 60 * 24 * 30,

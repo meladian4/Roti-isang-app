@@ -36,6 +36,20 @@ export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
 
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/logout", { method: "POST" })
+    } catch (e) {
+      console.error("Logout API error:", e)
+    }
+    try {
+      await signOut({ redirect: false })
+    } catch (e) {
+      console.error("SignOut error:", e)
+    }
+    window.location.href = "/login"
+  }
+
   return (
     <>
       {/* ========================================== */}
@@ -55,7 +69,7 @@ export function Sidebar() {
               <Image src="/logo-ropisku.jpg" alt="Logo" fill className="object-cover" sizes="28px" />
             </div>
             <span className="font-black text-base tracking-tight bg-gradient-to-r from-emerald-100 to-white bg-clip-text text-transparent">
-              Roti Isang
+              Ropisku
             </span>
           </div>
         </div>
@@ -82,7 +96,7 @@ export function Sidebar() {
                   <Image src="/logo-ropisku.jpg" alt="Logo" fill className="object-cover" sizes="40px" />
                 </div>
                 <div>
-                  <h1 className="font-extrabold text-base tracking-tight text-emerald-100">Roti Isang</h1>
+                  <h1 className="font-extrabold text-base tracking-tight text-emerald-100">Ropisku</h1>
                   <p className="text-emerald-200/80 text-[10px] font-medium">Production & Finance</p>
                 </div>
               </div>
@@ -142,7 +156,7 @@ export function Sidebar() {
             {/* Footer Logout */}
             <div className="p-4 border-t border-white/15 space-y-2">
               <button
-                onClick={() => signOut({ callbackUrl: "/login" })}
+                onClick={handleLogout}
                 className="flex items-center gap-3 px-4 py-2.5 w-full rounded-2xl text-sm font-bold text-emerald-100 hover:bg-rose-500/20 hover:text-rose-200 border border-transparent transition-all"
               >
                 <div className="p-2 rounded-xl bg-white/10">
@@ -191,7 +205,7 @@ export function Sidebar() {
               </div>
               <div className="whitespace-nowrap">
                 <h1 className="font-extrabold text-lg tracking-tight bg-gradient-to-r from-emerald-100 via-teal-100 to-white bg-clip-text text-transparent">
-                  Roti Isang
+                  Ropisku
                 </h1>
                 <p className="text-emerald-200/80 text-[11px] font-medium tracking-wide">Production & Finance</p>
               </div>
@@ -263,7 +277,7 @@ export function Sidebar() {
           )}
         >
           <button
-            onClick={() => signOut({ callbackUrl: "/login" })}
+            onClick={handleLogout}
             title={isCollapsed ? "Keluar Akun" : undefined}
             className={cn(
               "flex items-center gap-3 py-2.5 w-full rounded-2xl text-sm font-bold text-emerald-100/80 hover:bg-rose-500/20 hover:text-rose-200 hover:border-rose-500/30 border border-transparent transition-all duration-300 group",

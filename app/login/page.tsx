@@ -126,7 +126,7 @@ export default function LoginPage() {
               <Image src="/logo-ropisku.jpg" alt="Logo" fill className="object-cover" sizes="64px" priority />
             </div>
             <h1 className="text-3xl font-black text-slate-900 tracking-tight block">
-              Roti Isang
+              Ropisku
             </h1>
             <p className="text-emerald-700 font-bold text-xs uppercase tracking-wider mt-1">
               Sistem Manajemen Produksi & Keuangan
@@ -229,7 +229,7 @@ export default function LoginPage() {
 
           <div className="mt-5 pt-4 border-t border-slate-100 text-center">
             <p className="text-xs text-slate-400 font-medium">
-              Sistem Manajemen Roti Isang • Hak Cipta Dilindungi
+              Sistem Manajemen Ropisku • Hak Cipta Dilindungi
             </p>
           </div>
         </div>
