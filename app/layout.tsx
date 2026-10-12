@@ -6,6 +6,10 @@ import { auth } from "@/auth"
 export const metadata: Metadata = {
   title: "Roti Isang - Manajemen Produksi",
   description: "Sistem manajemen bahan baku dan produksi roti isang",
+  icons: {
+    icon: "/logo-ropisku.jpg",
+    apple: "/logo-ropisku.jpg",
+  },
 }
 
 export const viewport: Viewport = {

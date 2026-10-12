@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import {
@@ -49,9 +50,9 @@ export function Sidebar() {
           >
             {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-gradient-to-br from-amber-300 to-teal-500 rounded-lg shadow-xs">
-              <Wheat className="h-4 w-4 text-emerald-950" />
+          <div className="flex items-center gap-2.5">
+            <div className="relative h-7 w-7 rounded-lg overflow-hidden border border-white/20 shadow-xs flex-shrink-0">
+              <Image src="/logo-ropisku.jpg" alt="Logo" fill className="object-cover" sizes="28px" />
             </div>
             <span className="font-black text-base tracking-tight bg-gradient-to-r from-emerald-100 to-white bg-clip-text text-transparent">
               Roti Isang
@@ -77,8 +78,8 @@ export function Sidebar() {
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-white/15">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-gradient-to-br from-amber-300 via-emerald-400 to-teal-500 rounded-xl shadow-md">
-                  <Wheat className="h-5 w-5 text-emerald-950" />
+                <div className="relative h-10 w-10 rounded-xl overflow-hidden border border-white/20 shadow-md flex-shrink-0 bg-stone-900">
+                  <Image src="/logo-ropisku.jpg" alt="Logo" fill className="object-cover" sizes="40px" />
                 </div>
                 <div>
                   <h1 className="font-extrabold text-base tracking-tight text-emerald-100">Roti Isang</h1>
@@ -185,12 +186,8 @@ export function Sidebar() {
           {/* Brand Logo & Name */}
           {!isCollapsed && (
             <div className="flex items-center gap-3 overflow-hidden transition-all duration-300">
-              <div className="relative p-2 bg-gradient-to-br from-amber-300 via-emerald-400 to-teal-500 rounded-xl shadow-md shadow-emerald-950/40 animate-float flex-shrink-0">
-                <Wheat className="h-5 w-5 text-emerald-950" />
-                <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-300 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-200"></span>
-                </span>
+              <div className="relative h-10 w-10 rounded-xl overflow-hidden border border-white/20 shadow-md shadow-emerald-950/40 flex-shrink-0 bg-stone-900">
+                <Image src="/logo-ropisku.jpg" alt="Logo" fill className="object-cover" sizes="40px" />
               </div>
               <div className="whitespace-nowrap">
                 <h1 className="font-extrabold text-lg tracking-tight bg-gradient-to-r from-emerald-100 via-teal-100 to-white bg-clip-text text-transparent">

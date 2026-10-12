@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -121,8 +122,8 @@ export default function LoginPage() {
         <div className="w-full bg-white rounded-3xl p-8 shadow-2xl border border-emerald-100/50">
           {/* Logo & Brand Header */}
           <div className="text-center pb-6 border-b border-slate-100 mb-6">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-600 to-teal-700 rounded-2xl shadow-lg shadow-emerald-600/30 mb-3">
-              <Wheat className="h-9 w-9 text-white" />
+            <div className="relative inline-block h-16 w-16 rounded-2xl overflow-hidden border border-emerald-100 shadow-md mx-auto mb-3 bg-stone-900">
+              <Image src="/logo-ropisku.jpg" alt="Logo" fill className="object-cover" sizes="64px" priority />
             </div>
             <h1 className="text-3xl font-black text-slate-900 tracking-tight block">
               Roti Isang
