@@ -69,7 +69,10 @@ const nextAuth = NextAuth({
       return session
     },
   },
-  pages: { signIn: "/login" },
+  pages: {
+    signIn: "/login",
+    error: "/login",
+  },
   session: { strategy: "jwt" },
   secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "roti-isang-super-secret-key-2024-ganti-ini",
 })
@@ -97,7 +100,7 @@ export async function auth() {
         user: {
           id: parsed.id || "admin-id",
           email: parsed.email || "admin@rotisang.com",
-          name: parsed.name || "Admin Roti Isang",
+          name: parsed.name || "Admin Ropisku",
           role: parsed.role || "ADMIN",
         },
         expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),

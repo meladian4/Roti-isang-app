@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import Image from "next/image"
-import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -65,14 +64,7 @@ export default function LoginPage() {
         return
       }
 
-      // 2. Fire and forget NextAuth background sync
-      signIn("credentials", {
-        email: cleanEmail,
-        password: cleanPassword,
-        redirect: false,
-      }).catch(() => {})
-
-      // 3. Instant navigation to dashboard
+      // 2. Instant navigation to dashboard
       window.location.href = "/dashboard"
     } catch (err) {
       console.error("Login handle error:", err)
