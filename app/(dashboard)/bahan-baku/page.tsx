@@ -44,14 +44,21 @@ export default function BahanBakuPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
+    const cleanForm = {
+      ...form,
+      currentStock: form.currentStock ? form.currentStock.toString().replace(/,/g, ".") : "0",
+      minStock: form.minStock ? form.minStock.toString().replace(/,/g, ".") : "0",
+      pricePerUnit: form.pricePerUnit ? form.pricePerUnit.toString().replace(/,/g, ".") : "0",
+    }
+
     let res: Response
     if (editItem) {
       res = await fetch(`/api/bahan-baku/${editItem.id}`, {
-        method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form),
+        method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(cleanForm),
       })
     } else {
       res = await fetch("/api/bahan-baku", {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form),
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(cleanForm),
       })
     }
 
@@ -83,8 +90,12 @@ export default function BahanBakuPage() {
   const handleStokUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
+    const cleanStokForm = {
+      ...stokForm,
+      quantity: stokForm.quantity ? stokForm.quantity.toString().replace(/,/g, ".") : "0",
+    }
     const res = await fetch(`/api/bahan-baku/${openStok}/stok`, {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(stokForm),
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(cleanStokForm),
     })
     const data = await res.json()
     if (!res.ok) { alert(data.error); setSaving(false); return }
@@ -146,17 +157,38 @@ export default function BahanBakuPage() {
                   </div>
                   <div className="space-y-1.5">
                     <Label className="font-bold text-slate-700">{editItem ? "Stok Saat Ini" : "Stok Awal"}</Label>
-                    <Input type="number" step="0.01" placeholder="0" value={form.currentStock} onChange={(e) => setForm({ ...form, currentStock: e.target.value })} className="rounded-xl" />
+                    <Input
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="0"
+                      value={form.currentStock}
+                      onChange={(e) => setForm({ ...form, currentStock: e.target.value.replace(/[^0-9.,]/g, "") })}
+                      className="rounded-xl"
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label className="font-bold text-slate-700">Stok Minimum Warning</Label>
-                    <Input type="number" step="0.01" placeholder="0" value={form.minStock} onChange={(e) => setForm({ ...form, minStock: e.target.value })} className="rounded-xl" />
+                    <Input
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="0"
+                      value={form.minStock}
+                      onChange={(e) => setForm({ ...form, minStock: e.target.value.replace(/[^0-9.,]/g, "") })}
+                      className="rounded-xl"
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="font-bold text-slate-700">Harga / Satuan (Rp)</Label>
-                    <Input type="number" step="1" placeholder="0" value={form.pricePerUnit} onChange={(e) => setForm({ ...form, pricePerUnit: e.target.value })} className="rounded-xl" />
+                    <Input
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="Contoh: 15000 atau 12,5"
+                      value={form.pricePerUnit}
+                      onChange={(e) => setForm({ ...form, pricePerUnit: e.target.value.replace(/[^0-9.,]/g, "") })}
+                      className="rounded-xl"
+                    />
                   </div>
                 </div>
                 <Button type="submit" className="w-full mt-2 rounded-xl" disabled={saving}>
@@ -262,7 +294,15 @@ export default function BahanBakuPage() {
                           </div>
                           <div className="space-y-1.5">
                             <Label className="font-bold text-slate-700">Jumlah ({ing.unit})</Label>
-                            <Input type="number" step="0.01" placeholder="0" value={stokForm.quantity} onChange={(e) => setStokForm({ ...stokForm, quantity: e.target.value })} required className="rounded-xl" />
+                            <Input
+                              type="text"
+                              inputMode="decimal"
+                              placeholder="Contoh: 500 atau 2,5"
+                              value={stokForm.quantity}
+                              onChange={(e) => setStokForm({ ...stokForm, quantity: e.target.value.replace(/[^0-9.,]/g, "") })}
+                              required
+                              className="rounded-xl"
+                            />
                           </div>
                           <div className="space-y-1.5">
                             <Label className="font-bold text-slate-700">Keterangan Catatan</Label>

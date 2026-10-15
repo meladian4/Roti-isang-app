@@ -29,9 +29,9 @@ export async function POST(req: Request) {
         description: data.description,
         servingsPerBatch: parseInt(data.servingsPerBatch) || 1,
         ingredients: {
-          create: data.ingredients.map((ing: { ingredientId: string; quantity: number }) => ({
+          create: data.ingredients.map((ing: { ingredientId: string; quantity: number | string }) => ({
             ingredientId: ing.ingredientId,
-            quantity: parseFloat(ing.quantity.toString()),
+            quantity: parseFloat(String(ing.quantity || "0").replace(",", ".")) || 0,
           })),
         },
       },

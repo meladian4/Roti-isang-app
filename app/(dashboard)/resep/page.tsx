@@ -60,7 +60,13 @@ export default function ResepPage() {
     e.preventDefault()
     setSaving(true)
     const valid = recipeIngredients.filter(ri => ri.ingredientId && ri.quantity)
-    const payload = { ...form, ingredients: valid.map(ri => ({ ingredientId: ri.ingredientId, quantity: parseFloat(ri.quantity) })) }
+    const payload = {
+      ...form,
+      ingredients: valid.map(ri => ({
+        ingredientId: ri.ingredientId,
+        quantity: parseFloat(ri.quantity.toString().replace(/,/g, ".")) || 0,
+      })),
+    }
     if (editItem) {
       await fetch(`/api/resep/${editItem.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
     } else {
@@ -134,7 +140,14 @@ export default function ResepPage() {
                         </Select>
                       </div>
                       <div className="w-32 space-y-1">
-                        <Input type="number" step="0.001" placeholder="Jumlah" value={row.quantity} onChange={e => updateIngredientRow(idx, "quantity", e.target.value)} className="rounded-xl bg-white" />
+                        <Input
+                          type="text"
+                          inputMode="decimal"
+                          placeholder="Jumlah"
+                          value={row.quantity}
+                          onChange={e => updateIngredientRow(idx, "quantity", e.target.value.replace(/[^0-9.,]/g, ""))}
+                          className="rounded-xl bg-white"
+                        />
                       </div>
                       {recipeIngredients.length > 1 && (
                         <Button type="button" variant="ghost" size="icon" onClick={() => removeIngredientRow(idx)} className="text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-xl">

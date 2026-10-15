@@ -6,11 +6,14 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatCurrency(amount: number): string {
+  const hasDecimals = amount % 1 !== 0
+  const maxDigits = amount > 0 && amount < 1 ? 3 : hasDecimals ? 2 : 0
   return new Intl.NumberFormat("id-ID", {
     style: "currency",
     currency: "IDR",
     minimumFractionDigits: 0,
-  }).format(amount);
+    maximumFractionDigits: maxDigits,
+  }).format(amount)
 }
 
 export function formatDate(date: Date | string): string {
@@ -18,9 +21,12 @@ export function formatDate(date: Date | string): string {
     day: "2-digit",
     month: "long",
     year: "numeric",
-  }).format(new Date(date));
+  }).format(new Date(date))
 }
 
 export function formatNumber(num: number): string {
-  return new Intl.NumberFormat("id-ID").format(num);
+  const hasDecimals = num % 1 !== 0
+  return new Intl.NumberFormat("id-ID", {
+    maximumFractionDigits: hasDecimals ? 3 : 0,
+  }).format(num)
 }

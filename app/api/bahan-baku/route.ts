@@ -22,9 +22,9 @@ export async function POST(req: Request) {
       data: {
         name: data.name,
         unit: data.unit,
-        currentStock: parseFloat(data.currentStock) || 0,
-        minStock: parseFloat(data.minStock) || 0,
-        pricePerUnit: parseFloat(data.pricePerUnit) || 0,
+        currentStock: parseFloat(String(data.currentStock || "0").replace(",", ".")) || 0,
+        minStock: parseFloat(String(data.minStock || "0").replace(",", ".")) || 0,
+        pricePerUnit: parseFloat(String(data.pricePerUnit || "0").replace(",", ".")) || 0,
       },
     })
 

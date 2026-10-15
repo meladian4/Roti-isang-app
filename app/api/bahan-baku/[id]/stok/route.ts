@@ -12,7 +12,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const ingredient = await prisma.ingredient.findUnique({ where: { id } })
   if (!ingredient) return NextResponse.json({ error: "Bahan tidak ditemukan" }, { status: 404 })
 
-  const qty = parseFloat(quantity)
+  const qty = parseFloat(String(quantity || "0").replace(",", ".")) || 0
   const newStock =
     type === "IN" ? ingredient.currentStock + qty : ingredient.currentStock - qty
 

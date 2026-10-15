@@ -18,12 +18,12 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   } = {
     name: data.name,
     unit: data.unit,
-    minStock: parseFloat(data.minStock) || 0,
-    pricePerUnit: parseFloat(data.pricePerUnit) || 0,
+    minStock: parseFloat(String(data.minStock || "0").replace(",", ".")) || 0,
+    pricePerUnit: parseFloat(String(data.pricePerUnit || "0").replace(",", ".")) || 0,
   }
 
   if (data.currentStock !== undefined && data.currentStock !== "") {
-    updateData.currentStock = parseFloat(data.currentStock) || 0
+    updateData.currentStock = parseFloat(String(data.currentStock).replace(",", ".")) || 0
   }
 
   const ingredient = await prisma.ingredient.update({
