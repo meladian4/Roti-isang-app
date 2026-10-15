@@ -26,8 +26,6 @@ import {
   X,
   Gift,
   Award,
-  Sparkles,
-  ArrowRight,
 } from "lucide-react"
 
 interface RecipeIngredient { ingredientId: string; quantity: number; ingredient: { pricePerUnit: number } }
@@ -222,7 +220,6 @@ export default function PenjualanPage() {
     const agentAllReturns = returns.filter(r => r.agentId === agent.id)
     const agentRegularReturns = agentAllReturns.filter(isRegularReturn)
     const agentBonuses = agentAllReturns.filter(isBonus)
-    const agentFree = agentAllReturns.filter(isFree)
 
     const omset = agentSales.reduce((sum, s) => sum + s.totalAmount, 0)
     const pcsSold = agentSales.reduce((sum, s) => sum + s.quantity, 0)
@@ -238,8 +235,6 @@ export default function PenjualanPage() {
     const bonusPcs = agentBonuses.reduce((sum, r) => sum + r.quantity, 0)
     const bonusHpp = agentBonuses.reduce((sum, r) => sum + r.lossAmount, 0)
 
-    const freePcs = agentFree.reduce((sum, r) => sum + r.quantity, 0)
-
     const labaBersih = omset - totalHppSold - kerugianRetur - bonusHpp
 
     return {
@@ -251,7 +246,6 @@ export default function PenjualanPage() {
       pcsReturned,
       bonusPcs,
       bonusHpp,
-      freePcs,
       labaBersih,
       transactionCount: agentSales.length + agentAllReturns.length,
     }
@@ -393,7 +387,8 @@ export default function PenjualanPage() {
   // Open Add Return / Free / Bonus with category presets
   const openAddReturn = (cat: "RETUR" | "FREE" | "BONUS" = "RETUR", specificAgentId?: string) => {
     setEditReturnItem(null)
-    const defaultAgent = specificAgentId || marketingAgents[0]?.id || ""
+    // Free TIDAK menggunakan agent (kesatuan perusahaan)
+    const defaultAgent = cat === "FREE" ? "" : (specificAgentId || marketingAgents[0]?.id || "")
     const defaultReason = cat === "BONUS"
       ? "Bonus Target Penjualan"
       : cat === "FREE"
@@ -432,7 +427,7 @@ export default function PenjualanPage() {
       category: cat,
       recipeId: item.recipeId || "",
       recipeName: item.recipeName,
-      agentId: item.agentId || "",
+      agentId: cat === "FREE" ? "" : (item.agentId || ""),
       quantity: item.quantity.toString(),
       reason: item.reason || (cat === "BONUS" ? "Bonus Target Penjualan" : cat === "FREE" ? "Free (Tester Toko)" : "Kadaluarsa (Expired)"),
       manualLossAmount: item.lossAmount.toString(),
@@ -454,8 +449,12 @@ export default function PenjualanPage() {
       finalReason = `Free: ${finalReason}`
     }
 
+    // Untuk Free: tidak menggunakan agentId (null)
+    const targetAgentId = returnForm.category === "FREE" ? null : (returnForm.agentId || null)
+
     const payload = {
       ...returnForm,
+      agentId: targetAgentId,
       reason: finalReason,
       userId: (session?.user as { id?: string })?.id,
     }
@@ -589,7 +588,7 @@ export default function PenjualanPage() {
           </div>
         </div>
 
-        {/* Top-Level Tab Switcher & Modal Actions */}
+        {/* Top-Level Tab Switcher */}
         <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 bg-white/70 backdrop-blur-md p-3 rounded-2xl border border-emerald-500/10 shadow-xs">
           <div className="flex flex-wrap bg-slate-100/80 p-1 rounded-xl gap-1">
             <button
@@ -631,33 +630,6 @@ export default function PenjualanPage() {
               <Button onClick={openAddSale} className="shadow-lg shadow-emerald-500/25">
                 <Plus className="h-4 w-4" /> Catat Penjualan
               </Button>
-            )}
-
-            {activeTab === "retur" && (
-              <div className="flex gap-1.5">
-                <Button
-                  onClick={() => openAddReturn("RETUR")}
-                  variant="destructive"
-                  size="sm"
-                  className="rounded-xl text-xs font-bold shadow-md shadow-rose-500/20"
-                >
-                  <Plus className="h-3.5 w-3.5" /> + Retur
-                </Button>
-                <Button
-                  onClick={() => openAddReturn("FREE")}
-                  size="sm"
-                  className="rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-md shadow-amber-500/20"
-                >
-                  <Gift className="h-3.5 w-3.5" /> + Free
-                </Button>
-                <Button
-                  onClick={() => openAddReturn("BONUS")}
-                  size="sm"
-                  className="rounded-xl text-xs font-bold bg-purple-700 hover:bg-purple-800 text-white shadow-md shadow-purple-500/20"
-                >
-                  <Award className="h-3.5 w-3.5" /> + Bonus
-                </Button>
-              </div>
             )}
           </div>
         </div>
@@ -727,11 +699,11 @@ export default function PenjualanPage() {
         )}
 
         {/* ============================================================ */}
-        {/* TAB 2: MENU RETUR (DENGAN 2 SUB-MENU: FREE & BONUS AGENT)   */}
+        {/* TAB 2: MENU RETUR (1 SUB-MENU = 1 TOMBOL AKSI TUNGGAL)       */}
         {/* ============================================================ */}
         {activeTab === "retur" && (
           <div className="space-y-5">
-            {/* SUB-MENU NAVIGATION PILLS */}
+            {/* SUB-MENU NAVIGATION PILLS & SINGLE CLEAN ACTION BUTTON */}
             <div className="bg-white/80 backdrop-blur-md p-2 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-2">
               <div className="flex flex-wrap items-center gap-1.5">
                 <button
@@ -794,58 +766,55 @@ export default function PenjualanPage() {
                 </button>
               </div>
 
-              {/* Sub-menu Context Action Button */}
+              {/* 1 TUNGGAL TOMBOL BERFUNGSI SESUAI SUB-MENU AKTIF */}
               <div>
                 {returSubTab === "bonus" ? (
                   <Button
                     onClick={() => openAddReturn("BONUS")}
-                    className="rounded-xl text-xs font-bold bg-purple-700 hover:bg-purple-800 text-white"
+                    className="rounded-xl text-xs font-bold bg-purple-700 hover:bg-purple-800 text-white shadow-sm"
                   >
-                    <Plus className="h-3.5 w-3.5" /> Catat Bonus Baru
+                    <Plus className="h-3.5 w-3.5 mr-1" /> Catat Bonus Agent
                   </Button>
                 ) : returSubTab === "free" ? (
                   <Button
                     onClick={() => openAddReturn("FREE")}
-                    className="rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white"
+                    className="rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-sm"
                   >
-                    <Plus className="h-3.5 w-3.5" /> Catat Roti Free Baru
+                    <Plus className="h-3.5 w-3.5 mr-1" /> Catat Roti Free
                   </Button>
                 ) : returSubTab === "retur" ? (
                   <Button
                     onClick={() => openAddReturn("RETUR")}
                     variant="destructive"
-                    className="rounded-xl text-xs font-bold"
+                    className="rounded-xl text-xs font-bold shadow-sm"
                   >
-                    <Plus className="h-3.5 w-3.5" /> Catat Retur Baru
+                    <Plus className="h-3.5 w-3.5 mr-1" /> Catat Retur Baru
                   </Button>
-                ) : null}
+                ) : (
+                  <Button
+                    onClick={() => openAddReturn("RETUR")}
+                    className="rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-sm"
+                  >
+                    <Plus className="h-3.5 w-3.5 mr-1" /> Catat Data Baru
+                  </Button>
+                )}
               </div>
             </div>
 
             {/* SUB-MENU VIEW 1: ⭐ BONUS AGENT MARKETING (JUMLAH SENDIRI-SENDIRI) */}
             {returSubTab === "bonus" && (
               <div className="space-y-6">
-                {/* Banner explanation */}
-                <div className="p-4 bg-purple-50 border border-purple-200 rounded-2xl flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-3">
-                    <div className="p-2.5 bg-purple-600 text-white rounded-xl shadow-md shadow-purple-600/30">
-                      <Award className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h4 className="font-extrabold text-purple-900 text-sm">Sub Menu: Bonus Agent Marketing</h4>
-                      <p className="text-xs text-purple-700 mt-0.5">
-                        Pencatatan jumlah roti bonus yang diberikan kepada masing-masing Agent Marketing dihitung secara <strong>sendiri-sendiri</strong> per agent.
-                      </p>
-                    </div>
+                {/* Banner explanation tanpa tombol duplikat */}
+                <div className="p-4 bg-purple-50 border border-purple-200 rounded-2xl flex items-start gap-3">
+                  <div className="p-2.5 bg-purple-600 text-white rounded-xl shadow-md shadow-purple-600/30 flex-shrink-0">
+                    <Award className="h-5 w-5" />
                   </div>
-                  <Button
-                    size="sm"
-                    onClick={() => setOpenAgentManager(true)}
-                    variant="outline"
-                    className="border-purple-300 text-purple-800 hover:bg-purple-100 rounded-xl text-xs font-bold flex-shrink-0"
-                  >
-                    <Settings className="h-3.5 w-3.5" /> Kelola Agent
-                  </Button>
+                  <div>
+                    <h4 className="font-extrabold text-purple-900 text-sm">Sub Menu: Bonus Agent Marketing</h4>
+                    <p className="text-xs text-purple-700 mt-0.5">
+                      Pencatatan jumlah roti bonus yang diberikan kepada masing-masing Agent Marketing dihitung secara <strong>sendiri-sendiri</strong> per agent.
+                    </p>
+                  </div>
                 </div>
 
                 {/* Summary stat cards for Bonus */}
@@ -875,16 +844,14 @@ export default function PenjualanPage() {
 
                 {/* GRID REKAP JUMLAH BONUS SENDIRI-SENDIRI TIAP AGENT */}
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
-                        <Users className="h-5 w-5 text-purple-600" />
-                        Rekap Jumlah Bonus Tiap Agent Marketing (Sendiri-Sendiri)
-                      </h3>
-                      <p className="text-xs text-slate-500">
-                        Klik tombol &quot;+ Beri Bonus&quot; di agent bersangkutan untuk mencatat bonus langsung ke agent tersebut
-                      </p>
-                    </div>
+                  <div>
+                    <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                      <Users className="h-5 w-5 text-purple-600" />
+                      Rekap Jumlah Bonus Tiap Agent Marketing (Sendiri-Sendiri)
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Klik tombol &quot;+ Beri Bonus&quot; di bawah untuk mencatat bonus langsung ke agent yang bersangkutan
+                    </p>
                   </div>
 
                   {marketingAgents.length === 0 ? (
@@ -1015,28 +982,20 @@ export default function PenjualanPage() {
               </div>
             )}
 
-            {/* SUB-MENU VIEW 2: 🎁 ROTI FREE (TESTER / PROMOSI) */}
+            {/* SUB-MENU VIEW 2: 🎁 ROTI FREE (TESTER / PROMOSI) - TANPA AGENT (KESATUAN PERUSAHAAN) */}
             {returSubTab === "free" && (
               <div className="space-y-6">
-                {/* Banner explanation */}
-                <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-3">
-                    <div className="p-2.5 bg-amber-600 text-white rounded-xl shadow-md shadow-amber-600/30">
-                      <Gift className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h4 className="font-extrabold text-amber-950 text-sm">Sub Menu: Roti Free (Tester & Promosi)</h4>
-                      <p className="text-xs text-amber-800 mt-0.5">
-                        Pencatatan roti yang dibagikan secara gratis untuk tester toko, cicipan pelanggan baru, atau promosi sampel (Biaya HPP diperhitungkan sebagai pengeluaran non-sales).
-                      </p>
-                    </div>
+                {/* Banner explanation tanpa tombol duplikat */}
+                <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3">
+                  <div className="p-2.5 bg-amber-600 text-white rounded-xl shadow-md shadow-amber-600/30 flex-shrink-0">
+                    <Gift className="h-5 w-5" />
                   </div>
-                  <Button
-                    onClick={() => openAddReturn("FREE")}
-                    className="bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold flex-shrink-0"
-                  >
-                    <Plus className="h-3.5 w-3.5" /> + Catat Roti Free
-                  </Button>
+                  <div>
+                    <h4 className="font-extrabold text-amber-950 text-sm">Sub Menu: Roti Free (Tester & Promosi)</h4>
+                    <p className="text-xs text-amber-800 mt-0.5">
+                      Pencatatan roti yang dibagikan secara gratis untuk tester toko, cicipan pelanggan baru, atau promosi sampel. Diperhitungkan sebagai kesatuan pengeluaran perusahaan non-sales (tanpa agent).
+                    </p>
+                  </div>
                 </div>
 
                 {/* Summary stat cards for Free */}
@@ -1057,7 +1016,7 @@ export default function PenjualanPage() {
                   </Card>
                 </div>
 
-                {/* Table of Free bread */}
+                {/* Table of Free bread (Tanpa Kolom Agent) */}
                 <Card className="overflow-hidden border-amber-200">
                   <CardHeader className="bg-amber-50 border-b border-amber-100 py-4">
                     <CardTitle className="text-base font-bold flex items-center gap-2 text-amber-950">
@@ -1073,7 +1032,6 @@ export default function PenjualanPage() {
                           <thead>
                             <tr className="bg-slate-50 border-b border-slate-100 text-slate-400 font-bold uppercase text-[10px] tracking-wider">
                               <th className="text-left py-3.5 px-4 sm:px-6">Tanggal</th>
-                              <th className="text-left py-3.5 px-4 sm:px-6">Penerima / Toko</th>
                               <th className="text-left py-3.5 px-4 sm:px-6">Nama Roti</th>
                               <th className="text-right py-3.5 px-4 sm:px-6">Jumlah Free</th>
                               <th className="text-left py-3.5 px-4 sm:px-6">Alasan / Keperluan</th>
@@ -1086,11 +1044,6 @@ export default function PenjualanPage() {
                             {freeReturns.map(r => (
                               <tr key={r.id} className="hover:bg-amber-50/40 transition-colors">
                                 <td className="py-4 px-4 sm:px-6 text-slate-500 font-medium whitespace-nowrap">{formatDate(r.date)}</td>
-                                <td className="py-4 px-4 sm:px-6">
-                                  <Badge className="bg-amber-100 text-amber-900 border border-amber-200 font-extrabold text-[10px]">
-                                    {r.agent?.name || "Umum / Toko"}
-                                  </Badge>
-                                </td>
                                 <td className="py-4 px-4 sm:px-6 font-bold text-slate-800">{r.recipeName}</td>
                                 <td className="py-4 px-4 sm:px-6 text-right font-black text-amber-700">{formatNumber(r.quantity)} pcs</td>
                                 <td className="py-4 px-4 sm:px-6">
@@ -1122,26 +1075,17 @@ export default function PenjualanPage() {
             {/* SUB-MENU VIEW 3: 🔴 RETUR REGULER (RUSAK / EXPIRED) */}
             {returSubTab === "retur" && (
               <div className="space-y-6">
-                {/* Banner explanation */}
-                <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-3">
-                    <div className="p-2.5 bg-rose-600 text-white rounded-xl shadow-md shadow-rose-600/30">
-                      <RotateCcw className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h4 className="font-extrabold text-rose-950 text-sm">Retur Reguler (Rusak / Expired / Ditolak)</h4>
-                      <p className="text-xs text-rose-800 mt-0.5">
-                        Pencatatan roti yang dikembalikan oleh toko konsinyasi atau agen karena kadaluarsa, rusak, bantet, atau cacat kemasan dengan kerugian HPP otomatis.
-                      </p>
-                    </div>
+                {/* Banner explanation tanpa tombol duplikat */}
+                <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-3">
+                  <div className="p-2.5 bg-rose-600 text-white rounded-xl shadow-md shadow-rose-600/30 flex-shrink-0">
+                    <RotateCcw className="h-5 w-5" />
                   </div>
-                  <Button
-                    onClick={() => openAddReturn("RETUR")}
-                    variant="destructive"
-                    className="rounded-xl text-xs font-bold flex-shrink-0"
-                  >
-                    <Plus className="h-3.5 w-3.5" /> + Catat Retur Baru
-                  </Button>
+                  <div>
+                    <h4 className="font-extrabold text-rose-950 text-sm">Retur Reguler (Rusak / Expired / Ditolak)</h4>
+                    <p className="text-xs text-rose-800 mt-0.5">
+                      Pencatatan roti yang dikembalikan oleh toko konsinyasi atau agen karena kadaluarsa, rusak, bantet, atau cacat kemasan dengan kerugian HPP otomatis.
+                    </p>
+                  </div>
                 </div>
 
                 {/* Summary stat cards for Retur */}
@@ -1299,9 +1243,15 @@ export default function PenjualanPage() {
                                     )}
                                   </td>
                                   <td className="py-4 px-4 sm:px-6">
-                                    <span className="font-bold text-slate-800 text-xs">
-                                      {r.agent?.name || "Umum / Toko"}
-                                    </span>
+                                    {f ? (
+                                      <span className="text-[11px] text-slate-400 font-medium italic">
+                                        Umum / Perusahaan
+                                      </span>
+                                    ) : (
+                                      <span className="font-bold text-slate-800 text-xs">
+                                        {r.agent?.name || "Umum / Toko"}
+                                      </span>
+                                    )}
                                   </td>
                                   <td className="py-4 px-4 sm:px-6 font-bold text-slate-800">{r.recipeName}</td>
                                   <td className={`py-4 px-4 sm:px-6 text-right font-black ${b ? "text-purple-700" : f ? "text-amber-700" : "text-rose-700"}`}>
@@ -1644,6 +1594,7 @@ export default function PenjualanPage() {
                 onClick={() => setReturnForm({
                   ...returnForm,
                   category: "FREE",
+                  agentId: "", // Free tidak memakai agent
                   reason: "Free (Tester Toko)",
                 })}
                 className={`py-2 px-2 rounded-xl text-xs font-bold transition-all ${
@@ -1672,43 +1623,51 @@ export default function PenjualanPage() {
             </div>
 
             <form onSubmit={handleReturnSubmit} className="space-y-4 mt-3">
-              {/* Agent Selector */}
-              <div className="space-y-1.5">
-                <Label className="font-bold text-slate-700">
-                  {returnForm.category === "BONUS" ? (
-                    <span className="text-purple-900 flex items-center gap-1">
-                      <Award className="h-3.5 w-3.5 text-purple-600" /> Pilih Agent Penerima Bonus *
-                    </span>
-                  ) : returnForm.category === "FREE" ? (
-                    "Toko / Agent Penerima Tester (Opsional)"
-                  ) : (
-                    "Pilih Account / Marketing Agent"
+              {/* Agent Selector: HANYA MUNCUL JIKA BUKAN FREE */}
+              {returnForm.category === "FREE" ? (
+                <div className="p-3 bg-amber-50 border border-amber-200/90 rounded-2xl text-xs text-amber-950 flex items-center gap-2.5">
+                  <div className="p-1.5 bg-amber-500 text-white rounded-lg flex-shrink-0">
+                    <Gift className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="font-extrabold text-amber-900">Roti Free Perusahaan (Tanpa Agent)</p>
+                    <p className="text-[11px] text-amber-800/90 mt-0.5">Tester & sampel promosi dicatat langsung sebagai kesatuan produksi perusahaan.</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <Label className="font-bold text-slate-700">
+                    {returnForm.category === "BONUS" ? (
+                      <span className="text-purple-900 flex items-center gap-1">
+                        <Award className="h-3.5 w-3.5 text-purple-600" /> Pilih Agent Penerima Bonus *
+                      </span>
+                    ) : (
+                      "Pilih Account / Marketing Agent"
+                    )}
+                  </Label>
+                  <Select value={returnForm.agentId} onValueChange={v => setReturnForm({ ...returnForm, agentId: v })}>
+                    <SelectTrigger className={`rounded-xl font-bold ${
+                      returnForm.category === "BONUS"
+                        ? "border-purple-300 text-purple-900 bg-purple-50/50"
+                        : "border-rose-300 text-rose-800"
+                    }`}>
+                      <SelectValue placeholder="Pilih Marketing Agent..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {marketingAgents.map(ag => (
+                        <SelectItem key={ag.id} value={ag.id}>
+                          <span className="font-bold">{ag.name} {ag.code ? `(${ag.code})` : ""}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {returnForm.category === "BONUS" && (
+                    <p className="text-[10px] text-purple-600 font-medium">
+                      ⭐ Bonus akan otomatis masuk dan dicatat khusus ke saldo agen yang dipilih.
+                    </p>
                   )}
-                </Label>
-                <Select value={returnForm.agentId} onValueChange={v => setReturnForm({ ...returnForm, agentId: v })}>
-                  <SelectTrigger className={`rounded-xl font-bold ${
-                    returnForm.category === "BONUS"
-                      ? "border-purple-300 text-purple-900 bg-purple-50/50"
-                      : returnForm.category === "FREE"
-                      ? "border-amber-300 text-amber-900"
-                      : "border-rose-300 text-rose-800"
-                  }`}>
-                    <SelectValue placeholder="Pilih Marketing Agent..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {marketingAgents.map(ag => (
-                      <SelectItem key={ag.id} value={ag.id}>
-                        <span className="font-bold">{ag.name} {ag.code ? `(${ag.code})` : ""}</span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {returnForm.category === "BONUS" && (
-                  <p className="text-[10px] text-purple-600 font-medium">
-                    ⭐ Bonus akan otomatis masuk dan dicatat khusus ke saldo agen yang dipilih.
-                  </p>
-                )}
-              </div>
+                </div>
+              )}
 
               <div className="space-y-1.5">
                 <Label className="font-bold text-slate-700">Tanggal Transaksi</Label>
