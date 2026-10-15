@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
+import { getRecipeStock } from "@/lib/stock"
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -40,6 +41,27 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     } else if (data.lossAmount) {
       const cleanLossStr = data.lossAmount.toString().replace(/\./g, "").replace(",", ".")
       lossAmount = parseFloat(cleanLossStr) || 0
+    }
+
+    // STRICT CHECK: Available bread stock validation for edit
+    if (validRecipeId) {
+      const stockInfo = await getRecipeStock(validRecipeId, { returnId: id })
+      if (stockInfo) {
+        if (qty > stockInfo.availableStock) {
+          const typeLabel = (data.reason || "").toLowerCase().includes("bonus")
+            ? "Bonus Agent"
+            : (data.reason || "").toLowerCase().includes("free")
+            ? "Roti Free"
+            : "Retur"
+          return NextResponse.json(
+            {
+              error: `Stok roti "${stockInfo.recipeName}" tidak mencukupi untuk update ${typeLabel}! Sisa stok tersedia: ${stockInfo.availableStock} pcs (setelah penyesuaian). Tidak bisa mengubah ke ${qty} pcs.`,
+              availableStock: stockInfo.availableStock,
+            },
+            { status: 400 }
+          )
+        }
+      }
     }
 
     let validAgentId: string | null = null

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
+import { getRecipeStock } from "@/lib/stock"
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -16,9 +17,31 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const totalAmount = qty * price
 
     let validRecipeId: string | null = null
+    let targetRecipe = null
     if (data.recipeId && data.recipeId.trim() !== "") {
-      const recipeExists = await prisma.recipe.findUnique({ where: { id: data.recipeId } })
-      if (recipeExists) validRecipeId = recipeExists.id
+      targetRecipe = await prisma.recipe.findUnique({ where: { id: data.recipeId } })
+    }
+    if (!targetRecipe && data.recipeName) {
+      targetRecipe = await prisma.recipe.findFirst({ where: { name: data.recipeName } })
+    }
+    if (targetRecipe) {
+      validRecipeId = targetRecipe.id
+    }
+
+    // STRICT CHECK: Available bread stock validation for edit
+    if (validRecipeId) {
+      const stockInfo = await getRecipeStock(validRecipeId, { saleId: id })
+      if (stockInfo) {
+        if (qty > stockInfo.availableStock) {
+          return NextResponse.json(
+            {
+              error: `Stok roti "${stockInfo.recipeName}" tidak mencukupi! Sisa stok tersedia: ${stockInfo.availableStock} pcs (setelah penyesuaian). Tidak bisa mengubah penjualan ke ${qty} pcs.`,
+              availableStock: stockInfo.availableStock,
+            },
+            { status: 400 }
+          )
+        }
+      }
     }
 
     let validAgentId: string | null = null

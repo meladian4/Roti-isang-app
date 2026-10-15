@@ -26,7 +26,34 @@ import {
   X,
   Gift,
   Award,
+  Package,
+  AlertCircle,
+  AlertTriangle,
 } from "lucide-react"
+
+interface RecipeStockInfo {
+  recipeId: string
+  recipeName: string
+  servingsPerBatch: number
+  totalProduced: number
+  totalSold: number
+  totalRegularReturned: number
+  totalFree: number
+  totalBonus: number
+  totalOutflow: number
+  availableStock: number
+}
+
+interface StockSummary {
+  totalProducedAll: number
+  totalSoldAll: number
+  totalRegularReturnedAll: number
+  totalFreeAll: number
+  totalBonusAll: number
+  totalOutflowAll: number
+  availableStockAll: number
+  recipes: RecipeStockInfo[]
+}
 
 interface RecipeIngredient { ingredientId: string; quantity: number; ingredient: { pricePerUnit: number } }
 interface Recipe { id: string; name: string; servingsPerBatch: number; ingredients?: RecipeIngredient[] }
@@ -141,6 +168,7 @@ export default function PenjualanPage() {
   const [savingAgent, setSavingAgent] = useState(false)
 
   const [msg, setMsg] = useState("")
+  const [stockSummary, setStockSummary] = useState<StockSummary | null>(null)
 
   const fetchData = () => {
     Promise.all([
@@ -148,11 +176,13 @@ export default function PenjualanPage() {
       fetch("/api/marketing-agents").then(r => r.json()),
       fetch("/api/penjualan").then(r => r.json()),
       fetch("/api/retur").then(r => r.json()),
-    ]).then(([r, ag, s, ret]) => {
+      fetch("/api/stok-roti").then(r => r.json()),
+    ]).then(([r, ag, s, ret, st]) => {
       setRecipes(Array.isArray(r) ? r : [])
       setMarketingAgents(Array.isArray(ag) ? ag : [])
       setSales(Array.isArray(s) ? s : [])
       setReturns(Array.isArray(ret) ? ret : [])
+      setStockSummary(st && st.recipes ? st : null)
       setLoading(false)
     }).catch(() => setLoading(false))
   }
@@ -500,6 +530,34 @@ export default function PenjualanPage() {
     fetchData()
   }
 
+  const getRecipeStockForSale = (recipeIdOrName: string) => {
+    if (!stockSummary?.recipes) return null
+    const trimmed = (recipeIdOrName || "").trim().toLowerCase()
+    const found = stockSummary.recipes.find(
+      r => r.recipeId === recipeIdOrName || r.recipeName.toLowerCase() === trimmed
+    )
+    if (!found) return null
+    let avail = found.availableStock
+    if (editSaleItem && (editSaleItem.recipeId === found.recipeId || editSaleItem.recipeName.toLowerCase() === found.recipeName.toLowerCase())) {
+      avail += editSaleItem.quantity
+    }
+    return { ...found, availableStock: avail }
+  }
+
+  const getRecipeStockForReturn = (recipeIdOrName: string) => {
+    if (!stockSummary?.recipes) return null
+    const trimmed = (recipeIdOrName || "").trim().toLowerCase()
+    const found = stockSummary.recipes.find(
+      r => r.recipeId === recipeIdOrName || r.recipeName.toLowerCase() === trimmed
+    )
+    if (!found) return null
+    let avail = found.availableStock
+    if (editReturnItem && (editReturnItem.recipeId === found.recipeId || editReturnItem.recipeName.toLowerCase() === found.recipeName.toLowerCase())) {
+      avail += editReturnItem.quantity
+    }
+    return { ...found, availableStock: avail }
+  }
+
   const handleRecipeSaleSelect = (id: string) => {
     const selected = recipes.find(r => r.id === id)
     setSaleForm({
@@ -520,6 +578,14 @@ export default function PenjualanPage() {
     })
   }
 
+  const currentSaleStock = getRecipeStockForSale(saleForm.recipeId || saleForm.recipeName)
+  const saleQtyNum = parseInt(saleForm.quantity || "0", 10) || 0
+  const isSaleOverStock = currentSaleStock !== null && (saleQtyNum > currentSaleStock.availableStock || currentSaleStock.availableStock <= 0)
+
+  const currentReturnStock = getRecipeStockForReturn(returnForm.recipeId || returnForm.recipeName)
+  const returnQtyNum = parseInt(returnForm.quantity || "0", 10) || 0
+  const isReturnOverStock = currentReturnStock !== null && (returnQtyNum > currentReturnStock.availableStock || currentReturnStock.availableStock <= 0)
+
   return (
     <div className="min-h-screen">
       <Header
@@ -534,6 +600,55 @@ export default function PenjualanPage() {
             <p className="text-sm font-bold">{msg}</p>
           </div>
         )}
+
+        {/* Banner Stok Roti Siap Jual (Mengacu Hasil Produksi) */}
+        <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-emerald-800 rounded-3xl p-5 sm:p-6 text-white shadow-xl shadow-emerald-900/15 relative overflow-hidden">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
+            <div className="space-y-1.5 max-w-xl">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-white/20 text-emerald-100">
+                  Kumulatif Real-Time
+                </span>
+                <span className="text-xs text-emerald-200 font-bold">Stok Roti Jadi Siap Jual</span>
+              </div>
+              <h3 className="text-xl sm:text-2xl font-black tracking-tight flex items-center gap-2">
+                <Package className="h-6 w-6 text-emerald-300 flex-shrink-0" />
+                Stok Roti Siap Jual:{" "}
+                <span className={`underline decoration-4 underline-offset-4 ${
+                  (stockSummary?.availableStockAll ?? 0) > 0 ? "decoration-emerald-300 text-white" : "decoration-rose-400 text-rose-200"
+                }`}>
+                  {formatNumber(stockSummary?.availableStockAll ?? 0)} pcs
+                </span>
+              </h3>
+              <p className="text-xs text-emerald-100/90 leading-relaxed">
+                Penjualan, roti free, bonus marketing, & retur mengacu langsung pada stok produksi. Sisa stok hari sebelumnya otomatis terbawa dan dapat dijual kapan pun.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 bg-black/20 p-3 rounded-2xl border border-white/10 backdrop-blur-xs text-xs w-full lg:w-auto">
+              <div className="text-center p-2 rounded-xl bg-white/5">
+                <p className="text-[10px] text-emerald-200 uppercase font-bold">Diproduksi</p>
+                <p className="text-sm font-black text-white">{formatNumber(stockSummary?.totalProducedAll ?? 0)} pcs</p>
+              </div>
+              <div className="text-center p-2 rounded-xl bg-white/5">
+                <p className="text-[10px] text-emerald-200 uppercase font-bold">Terjual</p>
+                <p className="text-sm font-black text-white">{formatNumber(stockSummary?.totalSoldAll ?? 0)} pcs</p>
+              </div>
+              <div className="text-center p-2 rounded-xl bg-white/5">
+                <p className="text-[10px] text-amber-200 uppercase font-bold">Free</p>
+                <p className="text-sm font-black text-amber-300">{formatNumber(stockSummary?.totalFreeAll ?? 0)} pcs</p>
+              </div>
+              <div className="text-center p-2 rounded-xl bg-white/5">
+                <p className="text-[10px] text-purple-200 uppercase font-bold">Bonus</p>
+                <p className="text-sm font-black text-purple-300">{formatNumber(stockSummary?.totalBonusAll ?? 0)} pcs</p>
+              </div>
+              <div className="text-center p-2 rounded-xl bg-white/5 col-span-2 sm:col-span-1">
+                <p className="text-[10px] text-rose-200 uppercase font-bold">Retur</p>
+                <p className="text-sm font-black text-rose-300">{formatNumber(stockSummary?.totalRegularReturnedAll ?? 0)} pcs</p>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Financial Summary Metric Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5">
@@ -1506,10 +1621,54 @@ export default function PenjualanPage() {
                 <Select value={saleForm.recipeId} onValueChange={handleRecipeSaleSelect}>
                   <SelectTrigger className="rounded-xl"><SelectValue placeholder="Pilih jenis roti..." /></SelectTrigger>
                   <SelectContent>
-                    {recipes.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+                    {recipes.map(r => {
+                      const st = stockSummary?.recipes.find(s => s.recipeId === r.id)
+                      const avail = st ? st.availableStock : 0
+                      return (
+                        <SelectItem key={r.id} value={r.id}>
+                          <span className="font-semibold">{r.name}</span>
+                          <span className={`ml-2 text-xs font-bold ${avail > 0 ? "text-emerald-600" : "text-rose-500"}`}>
+                            (Stok: {formatNumber(avail)} pcs)
+                          </span>
+                        </SelectItem>
+                      )
+                    })}
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* LIVE STOK ROTI SIAP JUAL DISPLAY */}
+              <div className={`p-3 rounded-2xl border text-xs transition-all ${
+                currentSaleStock
+                  ? currentSaleStock.availableStock > 0
+                    ? "bg-emerald-50/90 border-emerald-200 text-emerald-950"
+                    : "bg-rose-50/90 border-rose-200 text-rose-950"
+                  : "bg-slate-50 border-slate-200 text-slate-600"
+              }`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Package className={`h-4 w-4 ${currentSaleStock && currentSaleStock.availableStock > 0 ? "text-emerald-600" : "text-rose-500"}`} />
+                    <span className="font-bold text-xs">
+                      {currentSaleStock
+                        ? `Sisa Stok Siap Jual: ${formatNumber(currentSaleStock.availableStock)} pcs`
+                        : "Pilih resep untuk cek sisa stok"}
+                    </span>
+                  </div>
+                  {currentSaleStock && (
+                    <span className={`px-2 py-0.5 rounded-full font-black text-[10px] uppercase ${
+                      currentSaleStock.availableStock > 0 ? "bg-emerald-200 text-emerald-800" : "bg-rose-200 text-rose-800"
+                    }`}>
+                      {currentSaleStock.availableStock > 0 ? "Tersedia" : "Stok Kosong"}
+                    </span>
+                  )}
+                </div>
+                {currentSaleStock && (
+                  <p className="text-[11px] opacity-75 mt-1">
+                    Produksi: {formatNumber(currentSaleStock.totalProduced)} pcs • Terjual: {formatNumber(currentSaleStock.totalSold)} pcs • Retur/Free/Bonus: {formatNumber(currentSaleStock.totalRegularReturned + currentSaleStock.totalFree + currentSaleStock.totalBonus)} pcs
+                  </p>
+                )}
+              </div>
+
               <div className="space-y-1.5">
                 <Label className="font-bold text-slate-700">Nama Roti (Teks Bebas)</Label>
                 <Input placeholder="Contoh: Roti Isang Original" value={saleForm.recipeName} onChange={e => setSaleForm({ ...saleForm, recipeName: e.target.value })} required className="rounded-xl" />
@@ -1525,6 +1684,23 @@ export default function PenjualanPage() {
                 </div>
               </div>
 
+              {/* OVERSTOCK WARNING BANNER */}
+              {isSaleOverStock && currentSaleStock && (
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-2 text-rose-700 text-xs font-bold animate-pulse">
+                  <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p>
+                      {currentSaleStock.availableStock <= 0
+                        ? `Stok roti "${currentSaleStock.recipeName}" habis (${currentSaleStock.availableStock} pcs)!`
+                        : `Jumlah penjualan (${saleQtyNum} pcs) melebihi stok yang tersedia (${currentSaleStock.availableStock} pcs)!`}
+                    </p>
+                    <p className="font-normal text-[11px] mt-0.5 text-rose-600">
+                      Silakan kurangi jumlah penjualan atau catat produksi baru terlebih dahulu di menu Produksi.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {saleForm.quantity && saleForm.pricePerUnit && (
                 <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex justify-between items-center text-xs">
                   <span className="font-bold text-slate-600">Total Omset Penjualan:</span>
@@ -1539,8 +1715,20 @@ export default function PenjualanPage() {
                 <Textarea placeholder="Contoh: Toko Konsinyasi A, Kasir Siang..." value={saleForm.notes} onChange={e => setSaleForm({ ...saleForm, notes: e.target.value })} rows={2} className="rounded-xl" />
               </div>
 
-              <Button type="submit" className="w-full rounded-xl" disabled={savingSale}>
-                {savingSale ? "Menyimpan Transaksi..." : editSaleItem ? "Update Penjualan" : "Simpan Penjualan"}
+              <Button
+                type="submit"
+                className={`w-full rounded-xl font-bold ${
+                  isSaleOverStock ? "bg-rose-600 hover:bg-rose-700 text-white" : ""
+                }`}
+                disabled={savingSale || isSaleOverStock}
+              >
+                {savingSale
+                  ? "Menyimpan Transaksi..."
+                  : isSaleOverStock
+                  ? `⚠️ Stok Tidak Mencukupi (Sisa ${currentSaleStock?.availableStock ?? 0} pcs)`
+                  : editSaleItem
+                  ? "Update Penjualan"
+                  : "Simpan Penjualan"}
               </Button>
             </form>
           </DialogContent>
@@ -1679,9 +1867,52 @@ export default function PenjualanPage() {
                 <Select value={returnForm.recipeId} onValueChange={handleRecipeReturnSelect}>
                   <SelectTrigger className="rounded-xl"><SelectValue placeholder="Pilih jenis roti..." /></SelectTrigger>
                   <SelectContent>
-                    {recipes.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+                    {recipes.map(r => {
+                      const st = stockSummary?.recipes.find(s => s.recipeId === r.id)
+                      const avail = st ? st.availableStock : 0
+                      return (
+                        <SelectItem key={r.id} value={r.id}>
+                          <span className="font-semibold">{r.name}</span>
+                          <span className={`ml-2 text-xs font-bold ${avail > 0 ? "text-emerald-600" : "text-rose-500"}`}>
+                            (Stok: {formatNumber(avail)} pcs)
+                          </span>
+                        </SelectItem>
+                      )
+                    })}
                   </SelectContent>
                 </Select>
+              </div>
+
+              {/* LIVE STOK ROTI SIAP JUAL DISPLAY */}
+              <div className={`p-3 rounded-2xl border text-xs transition-all ${
+                currentReturnStock
+                  ? currentReturnStock.availableStock > 0
+                    ? "bg-emerald-50/90 border-emerald-200 text-emerald-950"
+                    : "bg-rose-50/90 border-rose-200 text-rose-950"
+                  : "bg-slate-50 border-slate-200 text-slate-600"
+              }`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Package className={`h-4 w-4 ${currentReturnStock && currentReturnStock.availableStock > 0 ? "text-emerald-600" : "text-rose-500"}`} />
+                    <span className="font-bold text-xs">
+                      {currentReturnStock
+                        ? `Sisa Stok Siap Jual: ${formatNumber(currentReturnStock.availableStock)} pcs`
+                        : "Pilih resep untuk cek sisa stok"}
+                    </span>
+                  </div>
+                  {currentReturnStock && (
+                    <span className={`px-2 py-0.5 rounded-full font-black text-[10px] uppercase ${
+                      currentReturnStock.availableStock > 0 ? "bg-emerald-200 text-emerald-800" : "bg-rose-200 text-rose-800"
+                    }`}>
+                      {currentReturnStock.availableStock > 0 ? "Tersedia" : "Stok Kosong"}
+                    </span>
+                  )}
+                </div>
+                {currentReturnStock && (
+                  <p className="text-[11px] opacity-75 mt-1">
+                    Produksi: {formatNumber(currentReturnStock.totalProduced)} pcs • Terjual: {formatNumber(currentReturnStock.totalSold)} pcs • Retur/Free/Bonus: {formatNumber(currentReturnStock.totalRegularReturned + currentReturnStock.totalFree + currentReturnStock.totalBonus)} pcs
+                  </p>
+                )}
               </div>
 
               <div className="space-y-1.5">
@@ -1736,6 +1967,23 @@ export default function PenjualanPage() {
                 </div>
               </div>
 
+              {/* OVERSTOCK WARNING BANNER */}
+              {isReturnOverStock && currentReturnStock && (
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-2 text-rose-700 text-xs font-bold animate-pulse">
+                  <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p>
+                      {currentReturnStock.availableStock <= 0
+                        ? `Stok roti "${currentReturnStock.recipeName}" habis (${currentReturnStock.availableStock} pcs)!`
+                        : `Jumlah (${returnQtyNum} pcs) melebihi stok roti tersedia (${currentReturnStock.availableStock} pcs)!`}
+                    </p>
+                    <p className="font-normal text-[11px] mt-0.5 text-rose-600">
+                      Roti {returnForm.category === "BONUS" ? "bonus agent" : returnForm.category === "FREE" ? "free tester" : "retur"} tidak boleh melebihi stok produksi roti yang ada.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Automatic HPP Preview */}
               <div className={`p-3 rounded-xl space-y-1 text-xs border ${
                 returnForm.category === "BONUS"
@@ -1782,16 +2030,20 @@ export default function PenjualanPage() {
               <Button
                 type="submit"
                 className={`w-full rounded-xl text-white font-bold ${
-                  returnForm.category === "BONUS"
+                  isReturnOverStock
+                    ? "bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-600/25"
+                    : returnForm.category === "BONUS"
                     ? "bg-purple-700 hover:bg-purple-800 shadow-md shadow-purple-600/25"
                     : returnForm.category === "FREE"
                     ? "bg-amber-600 hover:bg-amber-700 shadow-md shadow-amber-600/25"
                     : "bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-600/25"
                 }`}
-                disabled={savingReturn}
+                disabled={savingReturn || isReturnOverStock}
               >
                 {savingReturn
                   ? "Menyimpan Data..."
+                  : isReturnOverStock
+                  ? `⚠️ Stok Tidak Mencukupi (Sisa ${currentReturnStock?.availableStock ?? 0} pcs)`
                   : editReturnItem
                   ? "Update Data"
                   : returnForm.category === "BONUS"

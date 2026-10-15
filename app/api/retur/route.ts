@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
+import { getRecipeStock } from "@/lib/stock"
 
 export async function GET() {
   const session = await auth()
@@ -56,6 +57,27 @@ export async function POST(req: Request) {
     } else if (manualLossAmount) {
       const cleanLossStr = manualLossAmount.toString().replace(/\./g, "").replace(",", ".")
       lossAmount = parseFloat(cleanLossStr) || 0
+    }
+
+    // STRICT CHECK: Available bread stock validation
+    if (validRecipeId) {
+      const stockInfo = await getRecipeStock(validRecipeId)
+      if (stockInfo) {
+        if (qty > stockInfo.availableStock) {
+          const typeLabel = (reason || "").toLowerCase().includes("bonus")
+            ? "Bonus Agent"
+            : (reason || "").toLowerCase().includes("free")
+            ? "Roti Free"
+            : "Retur"
+          return NextResponse.json(
+            {
+              error: `Stok roti "${stockInfo.recipeName}" tidak mencukupi untuk ${typeLabel}! Sisa stok tersedia: ${stockInfo.availableStock} pcs. Tidak bisa mencatat ${qty} pcs. Silakan catat produksi terlebih dahulu.`,
+              availableStock: stockInfo.availableStock,
+            },
+            { status: 400 }
+          )
+        }
+      }
     }
 
     // 2. Validate valid user ID in database
