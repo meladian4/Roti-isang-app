@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { formatCurrency, formatNumber, formatDate } from "@/lib/utils"
-import { Plus, Pencil, Trash2, Factory, CheckCircle, XCircle, Calculator, ChefHat, Scale, PieChart, Layers } from "lucide-react"
+import { Plus, Pencil, Trash2, Factory, CheckCircle, XCircle, Calculator, ChefHat, Scale, PieChart, Layers, Eye, ReceiptText } from "lucide-react"
 
 interface Ingredient { id: string; name: string; unit: string; currentStock: number; pricePerUnit: number }
 interface RecipeIngredient { ingredientId: string; quantity: number; ingredient: Ingredient }
@@ -23,7 +23,16 @@ interface Production {
   ingredients: Array<{ quantity: number; priceAtTime: number; ingredient: { name: string; unit: string } }>
 }
 
-interface CalcRow { name: string; unit: string; needed: number; available: number; ok: boolean; cost: number }
+interface CalcRow {
+  ingredientId: string
+  name: string
+  unit: string
+  needed: number
+  available: number
+  ok: boolean
+  pricePerUnit: number
+  cost: number
+}
 
 export default function ProduksiPage() {
   const { data: session } = useSession()
@@ -45,6 +54,10 @@ export default function ProduksiPage() {
   const [gramPerPcs, setGramPerPcs] = useState(0)
   const [saving, setSaving] = useState(false)
   const [successMsg, setSuccessMsg] = useState("")
+
+  // Detail HPP Modal State
+  const [openDetailDialog, setOpenDetailDialog] = useState(false)
+  const [detailProdItem, setDetailProdItem] = useState<Production | null>(null)
 
   // Edit Production Modal State
   const [openEditDialog, setOpenEditDialog] = useState(false)
@@ -83,7 +96,8 @@ export default function ProduksiPage() {
     const rows: CalcRow[] = recipe.ingredients.map(ri => {
       const needed = ri.quantity * ratio
       const available = ri.ingredient.currentStock
-      const itemCost = needed * ri.ingredient.pricePerUnit
+      const unitPrice = ri.ingredient.pricePerUnit || 0
+      const itemCost = needed * unitPrice
       cost += itemCost
 
       // Calculate dough weight in grams for ingredients measured in gram/kg
@@ -94,11 +108,13 @@ export default function ProduksiPage() {
       }
 
       return {
+        ingredientId: ri.ingredientId,
         name: ri.ingredient.name,
         unit: ri.ingredient.unit,
         needed,
         available,
         ok: available >= needed,
+        pricePerUnit: unitPrice,
         cost: itemCost,
       }
     })
@@ -107,6 +123,21 @@ export default function ProduksiPage() {
     setTotalCost(cost)
     setTotalDoughGram(doughWeightSumGram)
     setGramPerPcs(pcsTarget > 0 ? doughWeightSumGram / pcsTarget : 0)
+  }
+
+  const handlePriceRowChange = (index: number, newPriceStr: string) => {
+    const val = parseFloat(newPriceStr.replace(/,/g, ".")) || 0
+    setCalcRows(prev => {
+      const updated = [...prev]
+      const row = { ...updated[index] }
+      row.pricePerUnit = val
+      row.cost = row.needed * val
+      updated[index] = row
+
+      const newTotal = updated.reduce((sum, r) => sum + r.cost, 0)
+      setTotalCost(newTotal)
+      return updated
+    })
   }
 
   const handleRecipeChange = (id: string) => {
@@ -313,34 +344,65 @@ export default function ProduksiPage() {
                 </div>
               </div>
 
-              {/* Live Calculation Preview */}
+              {/* Live Calculation Preview & HPP Workflow Breakdown */}
               {calcRows.length > 0 && (
-                <div className="border border-emerald-200/80 rounded-2xl overflow-hidden bg-white/90 shadow-sm">
+                <div className="border border-emerald-200/80 rounded-2xl overflow-hidden bg-white shadow-sm">
                   <div className="bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2.5 text-white flex justify-between items-center">
-                    <h4 className="text-xs font-extrabold uppercase tracking-wider">Kebutuhan Gramasi Bahan Baku ({targetPcs} Pcs Roti)</h4>
-                    <span className="text-xs font-bold bg-white/20 backdrop-blur-xs px-2.5 py-0.5 rounded-full">
+                    <div>
+                      <h4 className="text-xs font-black uppercase tracking-wider">Workflow HPP & Kebutuhan Bahan ({targetPcs} Pcs Roti)</h4>
+                      <p className="text-[10px] text-emerald-100 font-medium">Rincian takaran, harga belanja per satuan, dan subtotal biaya tiap bahan</p>
+                    </div>
+                    <span className="text-xs font-extrabold bg-white/20 backdrop-blur-xs px-2.5 py-1 rounded-full">
                       HPP / Pcs: {formatCurrency(totalCost / (parseInt(targetPcs, 10) || 1))}
                     </span>
                   </div>
-                  <div className="divide-y divide-slate-100 max-h-56 overflow-y-auto">
+
+                  <div className="divide-y divide-slate-100 max-h-64 overflow-y-auto">
                     {calcRows.map((row, i) => (
-                      <div key={i} className={`flex items-center justify-between px-4 py-2.5 text-xs ${!row.ok ? "bg-rose-50/80" : ""}`}>
-                        <div className="flex items-center gap-2">
-                          {row.ok ? <CheckCircle className="h-4 w-4 text-emerald-500" /> : <XCircle className="h-4 w-4 text-rose-500" />}
-                          <span className="font-bold text-slate-800">{row.name}</span>
-                        </div>
-                        <div className="text-right">
-                          <p className={`font-extrabold ${!row.ok ? "text-rose-600" : "text-slate-800"}`}>
-                            Butuh: {formatNumber(row.needed)} {row.unit}
-                          </p>
-                          <p className="text-[10px] text-slate-400 font-medium">Tersedia: {formatNumber(row.available)} {row.unit}</p>
+                      <div key={i} className={`p-3 text-xs transition-colors ${!row.ok ? "bg-rose-50/70" : "hover:bg-slate-50/60"}`}>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            {row.ok ? <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0" /> : <XCircle className="h-4 w-4 text-rose-500 shrink-0" />}
+                            <div>
+                              <span className="font-bold text-slate-800 text-sm">{row.name}</span>
+                              <div className="text-[11px] text-slate-400 font-medium flex items-center gap-2 mt-0.5">
+                                <span>Tersedia: {formatNumber(row.available)} {row.unit}</span>
+                                <span>•</span>
+                                <span className={!row.ok ? "text-rose-600 font-bold" : "text-emerald-700 font-semibold"}>
+                                  Butuh: {formatNumber(row.needed)} {row.unit}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="text-right">
+                            <div className="font-extrabold text-slate-900 text-sm">
+                              {formatCurrency(row.cost)}
+                            </div>
+                            <div className="text-[10px] text-slate-500 font-medium mt-0.5">
+                              @{formatCurrency(row.pricePerUnit)} / {row.unit}
+                            </div>
+                          </div>
                         </div>
                       </div>
                     ))}
                   </div>
-                  <div className="bg-emerald-50/80 px-4 py-3 border-t border-emerald-200/60 flex justify-between items-center">
-                    <span className="text-xs font-bold text-slate-700">Total HPP Produksi ({targetPcs} Pcs):</span>
-                    <span className="text-lg font-black text-emerald-700">{formatCurrency(totalCost)}</span>
+
+                  <div className="bg-emerald-50/90 p-4 border-t border-emerald-200/80 space-y-2">
+                    <div className="flex justify-between items-center text-xs text-slate-600 font-semibold">
+                      <span>Total Pcs Roti Dibuat:</span>
+                      <span className="font-bold text-slate-800">{targetPcs} Pcs</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs text-slate-600 font-semibold">
+                      <span>HPP Biaya Pokok per Pcs:</span>
+                      <span className="font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-md">
+                        {formatCurrency(totalCost / (parseInt(targetPcs, 10) || 1))} / pcs
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center pt-2 border-t border-emerald-200">
+                      <span className="text-sm font-extrabold text-slate-800">Total HPP Produksi (Dijumlahkan):</span>
+                      <span className="text-xl font-black text-emerald-700">{formatCurrency(totalCost)}</span>
+                    </div>
                   </div>
                 </div>
               )}
@@ -365,6 +427,68 @@ export default function ProduksiPage() {
                 {saving ? "Memproses Adonan..." : canProduce ? `Konfirmasi & Produksi ${targetPcs} Pcs Roti` : "Stok Tidak Mencukupi"}
               </Button>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Detail HPP Produksi Modal */}
+        <Dialog open={openDetailDialog} onOpenChange={setOpenDetailDialog}>
+          <DialogContent className="max-w-2xl rounded-3xl glass-panel">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-xl font-bold">
+                <ReceiptText className="h-5 w-5 text-emerald-600" />
+                Rincian Workflow HPP Produksi Roti
+              </DialogTitle>
+            </DialogHeader>
+            {detailProdItem && (
+              <div className="space-y-4 mt-2">
+                <div className="p-4 bg-emerald-50/70 border border-emerald-200/80 rounded-2xl flex flex-wrap justify-between items-center gap-3">
+                  <div>
+                    <h4 className="font-black text-slate-800 text-base">{detailProdItem.recipe?.name}</h4>
+                    <p className="text-xs text-slate-500 font-medium">
+                      Tanggal: {formatDate(detailProdItem.date)} | Sesi: {detailProdItem.batchCount} batch ({detailProdItem.batchCount * (detailProdItem.recipe?.servingsPerBatch || 20)} Pcs Roti)
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs font-bold text-slate-400 block">Total HPP Produksi</span>
+                    <span className="text-xl font-black text-emerald-700">{formatCurrency(detailProdItem.totalCost)}</span>
+                  </div>
+                </div>
+
+                <div className="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-xs">
+                  <div className="bg-slate-50/80 px-4 py-2.5 border-b border-slate-100 flex justify-between items-center font-bold text-xs text-slate-600">
+                    <span>Rincian Bahan Baku Terpakai</span>
+                    <span>Subtotal Biaya HPP</span>
+                  </div>
+                  <div className="divide-y divide-slate-100 max-h-64 overflow-y-auto">
+                    {detailProdItem.ingredients?.map((item, idx) => {
+                      const itemSubtotal = item.quantity * item.priceAtTime
+                      return (
+                        <div key={idx} className="flex justify-between items-center p-3 text-xs">
+                          <div>
+                            <p className="font-bold text-slate-800">{item.ingredient?.name || "Bahan Baku"}</p>
+                            <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+                              Takaran: {formatNumber(item.quantity)} {item.ingredient?.unit} × @{formatCurrency(item.priceAtTime)} / {item.ingredient?.unit}
+                            </p>
+                          </div>
+                          <div className="font-extrabold text-emerald-700 text-sm">
+                            {formatCurrency(itemSubtotal)}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <div className="bg-emerald-50/80 p-3.5 border-t border-emerald-200/60 flex justify-between items-center">
+                    <div>
+                      <span className="text-xs font-bold text-slate-600 block">Total Biaya Semua Bahan:</span>
+                      <span className="text-[11px] text-emerald-800 font-semibold">
+                        HPP Pokok per Pcs = {formatCurrency(detailProdItem.totalCost / (detailProdItem.batchCount * (detailProdItem.recipe?.servingsPerBatch || 20) || 1))} / pcs
+                      </span>
+                    </div>
+                    <span className="text-lg font-black text-emerald-700">{formatCurrency(detailProdItem.totalCost)}</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
 
@@ -448,10 +572,24 @@ export default function ProduksiPage() {
                               {pcsProduced} Pcs Roti
                             </Badge>
                           </td>
-                          <td className="py-4 px-6 font-extrabold text-emerald-600">{formatCurrency(p.totalCost)}</td>
+                          <td className="py-4 px-6">
+                            <span className="font-extrabold text-emerald-600 block">{formatCurrency(p.totalCost)}</span>
+                            <span className="text-[11px] text-slate-400 font-semibold block mt-0.5">
+                              @{formatCurrency(p.totalCost / (pcsProduced || 1))} / pcs
+                            </span>
+                          </td>
                           <td className="py-4 px-6 text-xs font-semibold text-slate-500">{p.notes || "-"}</td>
                           <td className="py-4 px-6 text-center">
                             <div className="flex justify-center gap-1">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => { setDetailProdItem(p); setOpenDetailDialog(true); }}
+                                className="rounded-xl h-8 w-8 p-0 text-emerald-700 hover:bg-emerald-50 border-emerald-200"
+                                title="Lihat Rincian HPP Bahan"
+                              >
+                                <ReceiptText className="h-3.5 w-3.5" />
+                              </Button>
                               <Button variant="outline" size="sm" onClick={() => openEditProduction(p)} className="rounded-xl h-8 w-8 p-0">
                                 <Pencil className="h-3.5 w-3.5 text-slate-600" />
                               </Button>

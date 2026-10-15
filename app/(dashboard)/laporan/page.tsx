@@ -453,6 +453,77 @@ export default function LaporanPage() {
           </CardContent>
         </Card>
 
+        {/* Rincian Workflow HPP & Belanja Bahan Baku Terpakai */}
+        <Card className="overflow-hidden border-emerald-500/10 shadow-sm">
+          <CardHeader className="bg-gradient-to-r from-emerald-50/90 to-teal-50/60 border-b border-emerald-100 py-5 flex flex-row items-center justify-between">
+            <CardTitle className="text-base font-bold flex items-center gap-2 text-slate-800">
+              <div className="p-2 bg-emerald-600 text-white rounded-xl shadow-xs">
+                <Package className="h-4 w-4" />
+              </div>
+              Rincian Workflow Biaya HPP Bahan Baku Produksi (Terpakai)
+            </CardTitle>
+            <span className="text-xs font-bold text-slate-500 bg-white px-3 py-1 rounded-full border border-slate-200">
+              {data?.ingredientUsage?.length || 0} Jenis Bahan Terpakai
+            </span>
+          </CardHeader>
+          <CardContent className="p-0">
+            {loading ? (
+              <div className="text-center py-10 text-slate-400 text-xs">Memuat data penggunaan bahan...</div>
+            ) : !data?.ingredientUsage?.length ? (
+              <div className="text-center py-10 text-slate-400 text-xs">
+                Belum ada bahan baku yang terpakai untuk produksi pada periode ini
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-slate-50/70 border-b border-slate-100 text-slate-400 font-bold uppercase text-[10px] tracking-wider">
+                      <th className="text-left py-3.5 px-6">Nama Bahan Baku</th>
+                      <th className="text-right py-3.5 px-6">Total Kuantitas Terpakai</th>
+                      <th className="text-right py-3.5 px-6">Rata-rata Harga Satuan Belanja</th>
+                      <th className="text-right py-3.5 px-6">Total Nominal Biaya HPP Terpakai</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {data.ingredientUsage
+                      .sort((a, b) => b.totalCost - a.totalCost)
+                      .map((item, idx) => {
+                        const avgUnitPrice = item.totalUsed > 0 ? item.totalCost / item.totalUsed : 0
+                        return (
+                          <tr key={idx} className="hover:bg-emerald-50/40 transition-colors">
+                            <td className="py-3.5 px-6 font-bold text-slate-800 flex items-center gap-2">
+                              <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
+                              {item.name}
+                            </td>
+                            <td className="py-3.5 px-6 text-right font-extrabold text-slate-700">
+                              {formatNumber(item.totalUsed)} {item.unit}
+                            </td>
+                            <td className="py-3.5 px-6 text-right text-xs font-semibold text-slate-500">
+                              @{formatCurrency(avgUnitPrice)} / {item.unit}
+                            </td>
+                            <td className="py-3.5 px-6 text-right font-black text-emerald-700">
+                              {formatCurrency(item.totalCost)}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                  </tbody>
+                  <tfoot>
+                    <tr className="bg-emerald-50/90 font-bold border-t-2 border-emerald-200">
+                      <td colSpan={3} className="py-4 px-6 text-slate-800 text-sm">
+                        TOTAL BIAYA HPP BAHAN BAKU PRODUKSI (DIJUMLAHKAN):
+                      </td>
+                      <td className="py-4 px-6 text-right font-black text-emerald-800 text-base">
+                        {formatCurrency(data.ingredientUsage.reduce((sum, item) => sum + item.totalCost, 0))}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Interactive Charts Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Bar Chart */}

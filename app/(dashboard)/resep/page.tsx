@@ -10,10 +10,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { formatNumber } from "@/lib/utils"
+import { formatCurrency, formatNumber } from "@/lib/utils"
 import { Plus, Pencil, Trash2, BookOpen, X, Sparkles, ChefHat } from "lucide-react"
 
-interface Ingredient { id: string; name: string; unit: string; currentStock: number }
+interface Ingredient { id: string; name: string; unit: string; currentStock: number; pricePerUnit: number }
 interface RecipeIngredient { ingredientId: string; quantity: number; ingredient: Ingredient }
 interface Recipe {
   id: string; name: string; description: string | null; servingsPerBatch: number
@@ -129,34 +129,80 @@ export default function ResepPage() {
                       <Plus className="h-3.5 w-3.5" /> Tambah Baris Bahan
                     </Button>
                   </div>
-                  {recipeIngredients.map((row, idx) => (
-                    <div key={idx} className="flex gap-2 items-end bg-slate-50 p-2.5 rounded-xl border border-slate-200/60">
-                      <div className="flex-1 space-y-1">
-                        <Select value={row.ingredientId} onValueChange={v => updateIngredientRow(idx, "ingredientId", v)}>
-                          <SelectTrigger className="rounded-xl bg-white"><SelectValue placeholder="Pilih bahan baku..." /></SelectTrigger>
-                          <SelectContent>
-                            {ingredients.map(ing => <SelectItem key={ing.id} value={ing.id}>{ing.name} ({ing.unit})</SelectItem>)}
-                          </SelectContent>
-                        </Select>
+                  {recipeIngredients.map((row, idx) => {
+                    const selectedIng = ingredients.find(i => i.id === row.ingredientId)
+                    const qtyNum = parseFloat(row.quantity.replace(/,/g, ".")) || 0
+                    const subtotal = qtyNum * (selectedIng?.pricePerUnit || 0)
+
+                    return (
+                      <div key={idx} className="bg-slate-50 p-3 rounded-2xl border border-slate-200/60 space-y-2">
+                        <div className="flex gap-2 items-center">
+                          <div className="flex-1 space-y-1">
+                            <Select value={row.ingredientId} onValueChange={v => updateIngredientRow(idx, "ingredientId", v)}>
+                              <SelectTrigger className="rounded-xl bg-white"><SelectValue placeholder="Pilih bahan baku..." /></SelectTrigger>
+                              <SelectContent>
+                                {ingredients.map(ing => (
+                                  <SelectItem key={ing.id} value={ing.id}>
+                                    {ing.name} ({ing.unit}) — {formatCurrency(ing.pricePerUnit)}/{ing.unit}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="w-32 space-y-1">
+                            <Input
+                              type="text"
+                              inputMode="decimal"
+                              placeholder={`Jumlah (${selectedIng?.unit || "satuan"})`}
+                              value={row.quantity}
+                              onChange={e => updateIngredientRow(idx, "quantity", e.target.value.replace(/[^0-9.,]/g, ""))}
+                              className="rounded-xl bg-white font-bold"
+                            />
+                          </div>
+                          {recipeIngredients.length > 1 && (
+                            <Button type="button" variant="ghost" size="icon" onClick={() => removeIngredientRow(idx)} className="text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-xl shrink-0">
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                        {selectedIng && qtyNum > 0 && (
+                          <div className="flex justify-between items-center text-[11px] text-slate-500 font-medium px-1">
+                            <span>Harga Satuan: @{formatCurrency(selectedIng.pricePerUnit)} / {selectedIng.unit}</span>
+                            <span className="font-extrabold text-orange-600">Subtotal: {formatCurrency(subtotal)}</span>
+                          </div>
+                        )}
                       </div>
-                      <div className="w-32 space-y-1">
-                        <Input
-                          type="text"
-                          inputMode="decimal"
-                          placeholder="Jumlah"
-                          value={row.quantity}
-                          onChange={e => updateIngredientRow(idx, "quantity", e.target.value.replace(/[^0-9.,]/g, ""))}
-                          className="rounded-xl bg-white"
-                        />
-                      </div>
-                      {recipeIngredients.length > 1 && (
-                        <Button type="button" variant="ghost" size="icon" onClick={() => removeIngredientRow(idx)} className="text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-xl">
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
+
+                {/* Live Estimasi HPP Modal */}
+                {(() => {
+                  const liveBatchCost = recipeIngredients.reduce((sum, row) => {
+                    const ing = ingredients.find(i => i.id === row.ingredientId)
+                    const qty = parseFloat(row.quantity.replace(/,/g, ".")) || 0
+                    return sum + (qty * (ing?.pricePerUnit || 0))
+                  }, 0)
+                  const servingsNum = parseInt(form.servingsPerBatch, 10) || 1
+                  const livePcsCost = liveBatchCost / servingsNum
+
+                  if (liveBatchCost <= 0) return null
+
+                  return (
+                    <div className="p-4 bg-orange-50/90 rounded-2xl border border-orange-200/80 space-y-2 text-xs">
+                      <div className="flex justify-between items-center text-slate-700 font-bold">
+                        <span>Total HPP Bahan (1 Batch):</span>
+                        <span className="text-base font-black text-orange-700">{formatCurrency(liveBatchCost)}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-slate-700 font-bold">
+                        <span>Estimasi HPP Pokok per Pcs ({servingsNum} pcs):</span>
+                        <span className="font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">
+                          {formatCurrency(livePcsCost)} / pcs
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })()}
 
                 <Button type="submit" className="w-full mt-4 rounded-xl" disabled={saving}>
                   {saving ? "Menyimpan Resep..." : "Simpan Resep"}
@@ -199,19 +245,53 @@ export default function ResepPage() {
 
                 <div className="my-4">
                   <h4 className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-2.5">
-                    Takaran Bahan Baku (per 1 batch)
+                    Takaran Bahan Baku & Rincian HPP (per 1 batch)
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {recipe.ingredients.map((ri, i) => (
-                      <div key={i} className="flex justify-between items-center text-xs p-2.5 bg-slate-50/90 backdrop-blur-xs rounded-xl border border-slate-100">
-                        <span className="font-bold text-slate-700">{ri.ingredient.name}</span>
-                        <span className="font-extrabold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-md border border-orange-200/50">
-                          {formatNumber(ri.quantity)} {ri.ingredient.unit}
-                        </span>
-                      </div>
-                    ))}
+                    {recipe.ingredients.map((ri, i) => {
+                      const itemSubtotal = ri.quantity * (ri.ingredient.pricePerUnit || 0)
+                      return (
+                        <div key={i} className="flex justify-between items-center text-xs p-2.5 bg-slate-50/90 backdrop-blur-xs rounded-xl border border-slate-100">
+                          <div>
+                            <span className="font-bold text-slate-800 block">{ri.ingredient.name}</span>
+                            <span className="text-[10px] text-slate-400 font-medium">
+                              @{formatCurrency(ri.ingredient.pricePerUnit || 0)} / {ri.ingredient.unit}
+                            </span>
+                          </div>
+                          <div className="text-right">
+                            <span className="font-extrabold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-md border border-orange-200/50 block text-[11px]">
+                              {formatNumber(ri.quantity)} {ri.ingredient.unit}
+                            </span>
+                            <span className="text-[10px] font-bold text-slate-600 block mt-0.5">
+                              {formatCurrency(itemSubtotal)}
+                            </span>
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
+
+                {/* Financial Summary per Recipe Card */}
+                {(() => {
+                  const batchCost = recipe.ingredients.reduce((sum, ri) => sum + (ri.quantity * (ri.ingredient.pricePerUnit || 0)), 0)
+                  const costPerPcs = recipe.servingsPerBatch > 0 ? batchCost / recipe.servingsPerBatch : 0
+
+                  return (
+                    <div className="p-3.5 bg-gradient-to-r from-orange-50/90 to-amber-50/80 rounded-2xl border border-orange-200/60 mb-4 space-y-1.5 text-xs">
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-600 font-bold">Total HPP Standar (1 Batch):</span>
+                        <span className="text-sm font-black text-orange-700">{formatCurrency(batchCost)}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-600 font-bold">HPP Pokok per Pcs ({recipe.servingsPerBatch} pcs):</span>
+                        <span className="text-xs font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">
+                          {formatCurrency(costPerPcs)} / pcs
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })()}
 
                 <div className="flex gap-2 pt-2 border-t border-slate-100">
                   <Button variant="outline" size="sm" onClick={() => openEdit(recipe)} className="flex-1 rounded-xl">

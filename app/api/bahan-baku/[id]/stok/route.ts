@@ -7,7 +7,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const { id } = await params
-  const { type, quantity, notes } = await req.json()
+  const { type, quantity, notes, newPricePerUnit } = await req.json()
 
   const ingredient = await prisma.ingredient.findUnique({ where: { id } })
   if (!ingredient) return NextResponse.json({ error: "Bahan tidak ditemukan" }, { status: 404 })
@@ -20,13 +20,21 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: "Stok tidak mencukupi" }, { status: 400 })
   }
 
+  const updateData: { currentStock: number; pricePerUnit?: number } = { currentStock: newStock }
+  if (type === "IN" && newPricePerUnit) {
+    const parsedPrice = parseFloat(String(newPricePerUnit).replace(",", "."))
+    if (!isNaN(parsedPrice) && parsedPrice > 0) {
+      updateData.pricePerUnit = parsedPrice
+    }
+  }
+
   const [movement] = await prisma.$transaction([
     prisma.stockMovement.create({
       data: { ingredientId: id, type, quantity: qty, notes },
     }),
     prisma.ingredient.update({
       where: { id },
-      data: { currentStock: newStock },
+      data: updateData,
     }),
   ])
 
