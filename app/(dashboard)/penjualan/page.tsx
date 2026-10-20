@@ -217,7 +217,7 @@ export default function PenjualanPage() {
   const bonusReturns = returns.filter(isBonus)
 
   // Financial Summary Totals
-  const totalOmset = sales.reduce((sum, s) => sum + s.totalAmount, 0)
+  const totalOmsetKotor = sales.reduce((sum, s) => sum + s.totalAmount, 0)
   const totalPcsSold = sales.reduce((sum, s) => sum + s.quantity, 0)
   const totalReturnLoss = regularReturns.reduce((sum, r) => sum + r.lossAmount, 0)
   const totalFreeLoss = freeReturns.reduce((sum, r) => sum + r.lossAmount, 0)
@@ -226,6 +226,11 @@ export default function PenjualanPage() {
   const totalPcsRegularReturn = regularReturns.reduce((sum, r) => sum + r.quantity, 0)
   const totalPcsFree = freeReturns.reduce((sum, r) => sum + r.quantity, 0)
   const totalPcsBonus = bonusReturns.reduce((sum, r) => sum + r.quantity, 0)
+
+  // Penjualan Bersih (Net Omset) setelah dipotong Retur Reguler HPP
+  const totalOmsetBersih = Math.max(0, totalOmsetKotor - totalReturnLoss)
+  const totalPcsNetSold = Math.max(0, totalPcsSold - totalPcsRegularReturn)
+  const totalOmset = totalOmsetBersih // backward compatibility variable
 
   // REKAP BONUS SENDIRI-SENDIRI TIAP MARKETING AGENT
   const agentBonusSummary = marketingAgents.map(agent => {
@@ -251,7 +256,7 @@ export default function PenjualanPage() {
     const agentRegularReturns = agentAllReturns.filter(isRegularReturn)
     const agentBonuses = agentAllReturns.filter(isBonus)
 
-    const omset = agentSales.reduce((sum, s) => sum + s.totalAmount, 0)
+    const omsetKotor = agentSales.reduce((sum, s) => sum + s.totalAmount, 0)
     const pcsSold = agentSales.reduce((sum, s) => sum + s.quantity, 0)
 
     const totalHppSold = agentSales.reduce((sum, s) => {
@@ -259,20 +264,28 @@ export default function PenjualanPage() {
       return sum + hpp * s.quantity
     }, 0)
 
-    const kerugianRetur = agentRegularReturns.reduce((sum, r) => sum + r.lossAmount, 0)
+    const potonganRetur = agentRegularReturns.reduce((sum, r) => sum + r.lossAmount, 0)
     const pcsReturned = agentRegularReturns.reduce((sum, r) => sum + r.quantity, 0)
+
+    // Penjualan Bersih Agen = Omset Kotor - Potongan Retur Reguler (HPP)
+    const penjualanBersih = Math.max(0, omsetKotor - potonganRetur)
+    const pcsNetSold = Math.max(0, pcsSold - pcsReturned)
 
     const bonusPcs = agentBonuses.reduce((sum, r) => sum + r.quantity, 0)
     const bonusHpp = agentBonuses.reduce((sum, r) => sum + r.lossAmount, 0)
 
-    const labaBersih = omset - totalHppSold - kerugianRetur - bonusHpp
+    // Laba Bersih Agent = Penjualan Bersih - HPP Bahan Terjual - Bonus HPP
+    const labaBersih = penjualanBersih - totalHppSold - bonusHpp
 
     return {
       agent,
-      omset,
-      pcsSold,
+      omset: penjualanBersih, // Net Omset
+      omsetKotor,
+      potonganRetur,
+      pcsSold: pcsNetSold,
+      pcsGrossSold: pcsSold,
       totalHppSold,
-      kerugianRetur,
+      kerugianRetur: potonganRetur,
       pcsReturned,
       bonusPcs,
       bonusHpp,
@@ -658,20 +671,9 @@ export default function PenjualanPage() {
                 <DollarSign className="h-5 w-5 sm:h-6 sm:w-6" />
               </div>
               <div>
-                <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Total Omset</p>
-                <p className="text-lg sm:text-xl font-black text-emerald-600 tracking-tight mt-0.5">{formatCurrency(totalOmset)}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="glass-card rounded-2xl p-4 sm:p-5 relative overflow-hidden group">
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-lg shadow-orange-500/25">
-                <ShoppingBag className="h-5 w-5 sm:h-6 sm:w-6" />
-              </div>
-              <div>
-                <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Roti Terjual</p>
-                <p className="text-lg sm:text-xl font-black text-slate-800 tracking-tight mt-0.5">{formatNumber(totalPcsSold)} pcs</p>
+                <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Penjualan Bersih (Net)</p>
+                <p className="text-lg sm:text-xl font-black text-emerald-600 tracking-tight mt-0.5">{formatCurrency(totalOmsetBersih)}</p>
+                <p className="text-[10px] text-slate-400 font-medium">Kotor: {formatCurrency(totalOmsetKotor)}</p>
               </div>
             </div>
           </div>
@@ -682,10 +684,22 @@ export default function PenjualanPage() {
                 <RotateCcw className="h-5 w-5 sm:h-6 sm:w-6" />
               </div>
               <div>
-                <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Retur & Non-Sales</p>
-                <p className="text-lg sm:text-xl font-black text-rose-600 tracking-tight mt-0.5">
-                  {formatCurrency(totalReturnLoss + totalFreeLoss + totalBonusLoss)}
-                </p>
+                <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Potongan Retur Reguler</p>
+                <p className="text-lg sm:text-xl font-black text-rose-600 tracking-tight mt-0.5">-{formatCurrency(totalReturnLoss)}</p>
+                <p className="text-[10px] text-rose-500 font-semibold">{formatNumber(totalPcsRegularReturn)} pcs roti (HPP)</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="glass-card rounded-2xl p-4 sm:p-5 relative overflow-hidden group">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-lg shadow-orange-500/25">
+                <ShoppingBag className="h-5 w-5 sm:h-6 sm:w-6" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Roti Terjual Bersih</p>
+                <p className="text-lg sm:text-xl font-black text-slate-800 tracking-tight mt-0.5">{formatNumber(totalPcsNetSold)} pcs</p>
+                <p className="text-[10px] text-slate-400 font-medium">Kirim: {formatNumber(totalPcsSold)} pcs</p>
               </div>
             </div>
           </div>
@@ -698,6 +712,7 @@ export default function PenjualanPage() {
               <div>
                 <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Total Bonus Agent</p>
                 <p className="text-lg sm:text-xl font-black text-purple-700 tracking-tight mt-0.5">{formatNumber(totalPcsBonus)} pcs</p>
+                <p className="text-[10px] text-purple-600 font-medium">{formatCurrency(totalBonusLoss)}</p>
               </div>
             </div>
           </div>
@@ -1241,7 +1256,7 @@ export default function PenjualanPage() {
                               <th className="text-left py-3.5 px-4 sm:px-6">Nama Roti</th>
                               <th className="text-right py-3.5 px-4 sm:px-6">Jumlah Retur</th>
                               <th className="text-left py-3.5 px-4 sm:px-6">Alasan</th>
-                              <th className="text-right py-3.5 px-4 sm:px-6">Kerugian HPP</th>
+                              <th className="text-right py-3.5 px-4 sm:px-6">Potongan Penjualan (HPP)</th>
                               <th className="text-left py-3.5 px-4 sm:px-6">Catatan</th>
                               <th className="text-center py-3.5 px-4 sm:px-6">Aksi</th>
                             </tr>
@@ -1415,20 +1430,24 @@ export default function PenjualanPage() {
                   </CardHeader>
                   <CardContent className="p-5 space-y-3 bg-white">
                     <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-100">
-                      <span className="text-slate-500 font-medium">Total Omset Penjualan:</span>
-                      <span className="font-extrabold text-emerald-600">{formatCurrency(af.omset)}</span>
+                      <span className="text-slate-500 font-medium">Penjualan Bersih (Net):</span>
+                      <span className="font-extrabold text-emerald-600 text-sm">{formatCurrency(af.omset)}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-100 text-slate-500">
+                      <span>• Penjualan Kotor Toko:</span>
+                      <span className="font-semibold text-slate-700">{formatCurrency(af.omsetKotor)}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-100 text-rose-600">
+                      <span className="font-medium">• Potongan Retur Reguler:</span>
+                      <span className="font-bold">-{formatCurrency(af.potonganRetur)} ({af.pcsReturned} pcs)</span>
                     </div>
                     <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-100">
-                      <span className="text-slate-500 font-medium">Roti Terjual:</span>
+                      <span className="text-slate-500 font-medium">Roti Terjual Bersih:</span>
                       <span className="font-bold text-slate-800">{formatNumber(af.pcsSold)} pcs</span>
                     </div>
                     <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-100">
                       <span className="text-slate-500 font-medium">Estimasi HPP Roti Terjual:</span>
                       <span className="font-semibold text-slate-700">{formatCurrency(af.totalHppSold)}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-100">
-                      <span className="text-slate-500 font-medium">Kerugian Retur:</span>
-                      <span className="font-bold text-rose-600">-{formatCurrency(af.kerugianRetur)} ({af.pcsReturned} pcs)</span>
                     </div>
                     {/* Bonus Count per Agent */}
                     <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-100 bg-purple-50 p-2 rounded-lg">
@@ -1464,11 +1483,12 @@ export default function PenjualanPage() {
                     <thead>
                       <tr className="bg-slate-50/70 border-b border-slate-100 text-slate-400 font-bold uppercase text-[10px] tracking-wider">
                         <th className="text-left py-3.5 px-6">Kode & Nama Agent</th>
-                        <th className="text-right py-3.5 px-6">Terjual (Pcs)</th>
-                        <th className="text-right py-3.5 px-6">Total Omset</th>
+                        <th className="text-right py-3.5 px-6">Kirim (Pcs)</th>
                         <th className="text-right py-3.5 px-6">Retur (Pcs)</th>
+                        <th className="text-right py-3.5 px-6">Bersih (Pcs)</th>
+                        <th className="text-right py-3.5 px-6">Penjualan Bersih</th>
+                        <th className="text-right py-3.5 px-6">Potongan Retur</th>
                         <th className="text-right py-3.5 px-6">Bonus (Pcs)</th>
-                        <th className="text-right py-3.5 px-6">Kerugian Retur</th>
                         <th className="text-right py-3.5 px-6">Laba Bersih Agent</th>
                         <th className="text-center py-3.5 px-6">Aksi</th>
                       </tr>
@@ -1477,11 +1497,12 @@ export default function PenjualanPage() {
                       {agentFinancials.map(af => (
                         <tr key={af.agent.id} className="hover:bg-emerald-50/40 transition-colors">
                           <td className="py-4 px-6 font-bold text-slate-800">{af.agent.name}</td>
+                          <td className="py-4 px-6 text-right font-medium text-slate-500">{formatNumber(af.pcsGrossSold)} pcs</td>
+                          <td className="py-4 px-6 text-right font-bold text-rose-600">-{formatNumber(af.pcsReturned)} pcs</td>
                           <td className="py-4 px-6 text-right font-bold text-slate-700">{formatNumber(af.pcsSold)} pcs</td>
                           <td className="py-4 px-6 text-right font-extrabold text-emerald-600">{formatCurrency(af.omset)}</td>
-                          <td className="py-4 px-6 text-right font-bold text-rose-700">{formatNumber(af.pcsReturned)} pcs</td>
+                          <td className="py-4 px-6 text-right font-bold text-rose-600">-{formatCurrency(af.potonganRetur)}</td>
                           <td className="py-4 px-6 text-right font-black text-purple-700">+{formatNumber(af.bonusPcs)} pcs</td>
-                          <td className="py-4 px-6 text-right font-bold text-rose-600">-{formatCurrency(af.kerugianRetur)}</td>
                           <td className={`py-4 px-6 text-right font-black text-base ${af.labaBersih >= 0 ? "text-emerald-700" : "text-rose-600"}`}>
                             {formatCurrency(af.labaBersih)}
                           </td>
@@ -2006,7 +2027,7 @@ export default function PenjualanPage() {
                       ? "Total Biaya HPP Bonus (Otomatis):"
                       : returnForm.category === "FREE"
                       ? "Total Biaya HPP Roti Free (Otomatis):"
-                      : "Total Kerugian Retur (Otomatis):"}
+                      : "Total Potongan Penjualan (HPP):"}
                   </span>
                   <span className={`font-black text-sm ${
                     returnForm.category === "BONUS" ? "text-purple-800" : returnForm.category === "FREE" ? "text-amber-800" : "text-rose-600"
@@ -2014,6 +2035,11 @@ export default function PenjualanPage() {
                     {formatCurrency(estimatedHppPerPcs * (parseInt(returnForm.quantity, 10) || 1))}
                   </span>
                 </div>
+                {returnForm.category === "RETUR" && (
+                  <p className="text-[11px] text-rose-700/90 pt-1.5 border-t border-rose-200/60 font-medium">
+                    💡 Nominal potongan HPP ini otomatis memotong Pos Penjualan agen & mengurangi Penjualan Bersih Bulanan.
+                  </p>
+                )}
               </div>
 
               <div className="space-y-1.5">

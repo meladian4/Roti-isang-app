@@ -17,7 +17,15 @@ interface LaporanData {
     totalBatches: number
     productionCount: number
     totalRevenue: number
+    netRevenue?: number
     totalSalesQty: number
+    netSalesQty?: number
+    totalRegularReturnLoss?: number
+    totalRegularReturnQty?: number
+    totalFreeLoss?: number
+    totalFreeQty?: number
+    totalBonusLoss?: number
+    totalBonusQty?: number
     totalReturnLoss: number
     totalReturnQty: number
     totalOperationalExpense: number
@@ -157,9 +165,11 @@ export default function LaporanPage() {
     csvContent += `Periode: ${period === "specific-month" ? `${MONTHS.find(m=>m.val===selectedMonth)?.label} ${selectedYear}` : period}\n\n`
 
     csvContent += "RINGKASAN BUKU BESAR LABA RUGI\n"
-    csvContent += `Total Omset Penjualan (+),${data.summary.totalRevenue}\n`
+    csvContent += `Penjualan Kotor (Semua Toko) (+),${data.summary.totalRevenue}\n`
+    csvContent += `Potongan Retur Reguler (Nominal HPP) (-),${data.summary.totalRegularReturnLoss ?? data.summary.totalReturnLoss}\n`
+    csvContent += `Total Penjualan Bersih (Net Sales),${data.summary.netRevenue ?? (data.summary.totalRevenue - (data.summary.totalRegularReturnLoss ?? data.summary.totalReturnLoss))}\n`
     csvContent += `Total HPP Produksi Roti (-),${data.summary.totalCost}\n`
-    csvContent += `Total Kerugian Retur (-),${data.summary.totalReturnLoss}\n`
+    csvContent += `Beban Roti Free & Bonus (-),${(data.summary.totalFreeLoss || 0) + (data.summary.totalBonusLoss || 0)}\n`
     csvContent += `Total Beban Operasional (-),${data.summary.totalOperationalExpense}\n`
     csvContent += `LABA BERSIH AKHIR USAHA,${data.summary.netProfit}\n`
     csvContent += `Nilai Persediaan Sisa Bahan (Aset Periode Berikutnya),${data.summary.totalInventoryValue}\n\n`
@@ -184,18 +194,22 @@ export default function LaporanPage() {
   }
 
   const netProfit = data?.summary.netProfit || 0
-  const omset = data?.summary.totalRevenue || 0
+  const omsetKotor = data?.summary.totalRevenue || 0
+  const regularReturnLoss = data?.summary.totalRegularReturnLoss ?? data?.summary.totalReturnLoss ?? 0
+  const omsetBersih = data?.summary.netRevenue ?? Math.max(0, omsetKotor - regularReturnLoss)
+  const freeLoss = data?.summary.totalFreeLoss || 0
+  const bonusLoss = data?.summary.totalBonusLoss || 0
+  const nonSalesLoss = freeLoss + bonusLoss
   const hpp = data?.summary.totalCost || 0
-  const retur = data?.summary.totalReturnLoss || 0
   const operasional = data?.summary.totalOperationalExpense || 0
   const totalInventoryValue = data?.summary.totalInventoryValue || 0
 
   // Pie Chart Data Breakdown
   const pieData = data
     ? [
-        { name: "Omset Penjualan (+)", value: omset },
+        { name: "Penjualan Bersih (+)", value: omsetBersih },
         { name: "HPP Produksi (-)", value: hpp },
-        { name: "Kerugian Retur (-)", value: retur },
+        { name: "Potongan Retur HPP (-)", value: regularReturnLoss },
         { name: "Beban Operasional (-)", value: operasional },
         { name: "Laba Bersih Akhir", value: Math.max(0, netProfit) },
       ]
@@ -326,8 +340,9 @@ export default function LaporanPage() {
                 <DollarSign className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Omset Penjualan (+)</p>
-                <p className="text-lg font-black text-emerald-600 tracking-tight mt-0.5">{loading ? "..." : formatCurrency(omset)}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Penjualan Bersih (+)</p>
+                <p className="text-lg font-black text-emerald-600 tracking-tight mt-0.5">{loading ? "..." : formatCurrency(omsetBersih)}</p>
+                <p className="text-[10px] text-slate-400 font-medium">Kotor: {formatCurrency(omsetKotor)}</p>
               </div>
             </div>
           </div>
@@ -340,6 +355,7 @@ export default function LaporanPage() {
               <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">HPP Produksi (-)</p>
                 <p className="text-lg font-black text-slate-800 tracking-tight mt-0.5">{loading ? "..." : formatCurrency(hpp)}</p>
+                <p className="text-[10px] text-slate-400 font-medium">Bahan Terpakai</p>
               </div>
             </div>
           </div>
@@ -350,8 +366,9 @@ export default function LaporanPage() {
                 <RotateCcw className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kerugian Retur (-)</p>
-                <p className="text-lg font-black text-rose-600 tracking-tight mt-0.5">{loading ? "..." : formatCurrency(retur)}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Potongan Retur (-)</p>
+                <p className="text-lg font-black text-rose-600 tracking-tight mt-0.5">{loading ? "..." : formatCurrency(regularReturnLoss)}</p>
+                <p className="text-[10px] text-rose-500 font-semibold">Potong Penjualan (HPP)</p>
               </div>
             </div>
           </div>
@@ -364,6 +381,7 @@ export default function LaporanPage() {
               <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Beban Operasional (-)</p>
                 <p className="text-lg font-black text-amber-600 tracking-tight mt-0.5">{loading ? "..." : formatCurrency(operasional)}</p>
+                <p className="text-[10px] text-slate-400 font-medium">Gas, Plastik, Listrik</p>
               </div>
             </div>
           </div>
@@ -376,6 +394,7 @@ export default function LaporanPage() {
               <div>
                 <p className="text-[10px] font-extrabold text-emerald-100 uppercase tracking-wider">Laba Bersih Akhir</p>
                 <p className="text-lg font-black text-white tracking-tight mt-0.5">{loading ? "..." : formatCurrency(netProfit)}</p>
+                <p className="text-[10px] text-emerald-200 font-medium">Bulanan</p>
               </div>
             </div>
           </div>
@@ -412,13 +431,26 @@ export default function LaporanPage() {
           </CardHeader>
           <CardContent className="p-6 bg-white space-y-4">
             <div className="divide-y divide-slate-100 text-sm">
-              <div className="py-3 flex justify-between items-center">
-                <span className="font-bold text-slate-700 flex items-center gap-2">
-                  <span className="h-3 w-3 rounded-full bg-emerald-500 inline-block"></span>
-                  1. Total Omset Penjualan Roti
-                </span>
-                <span className="font-black text-emerald-600 text-base">+{formatCurrency(omset)}</span>
+              <div className="py-4 space-y-2">
+                <div className="flex justify-between items-center text-sm font-bold text-slate-800">
+                  <span className="flex items-center gap-2">
+                    <span className="h-3 w-3 rounded-full bg-emerald-500 inline-block"></span>
+                    1. Pos Pendapatan Penjualan Roti (Bersih)
+                  </span>
+                  <span className="font-black text-emerald-600 text-lg">+{formatCurrency(omsetBersih)}</span>
+                </div>
+                <div className="pl-5 pr-3 py-2 bg-slate-50/90 rounded-xl space-y-1 text-xs border border-slate-200/60">
+                  <div className="flex justify-between text-slate-600 font-medium">
+                    <span>• Total Penjualan Kotor (Semua Toko)</span>
+                    <span className="font-bold text-slate-800">+{formatCurrency(omsetKotor)}</span>
+                  </div>
+                  <div className="flex justify-between text-rose-600 font-semibold">
+                    <span>• Potongan Retur Reguler (Nominal HPP)</span>
+                    <span className="font-bold">-{formatCurrency(regularReturnLoss)}</span>
+                  </div>
+                </div>
               </div>
+
               <div className="py-3 flex justify-between items-center">
                 <span className="font-bold text-slate-700 flex items-center gap-2">
                   <span className="h-3 w-3 rounded-full bg-orange-500 inline-block"></span>
@@ -426,24 +458,29 @@ export default function LaporanPage() {
                 </span>
                 <span className="font-extrabold text-slate-800">-{formatCurrency(hpp)}</span>
               </div>
-              <div className="py-3 flex justify-between items-center">
-                <span className="font-bold text-slate-700 flex items-center gap-2">
-                  <span className="h-3 w-3 rounded-full bg-rose-500 inline-block"></span>
-                  3. Total Kerugian Retur & Kadaluarsa
-                </span>
-                <span className="font-bold text-rose-600">-{formatCurrency(retur)}</span>
-              </div>
+
+              {nonSalesLoss > 0 && (
+                <div className="py-3 flex justify-between items-center">
+                  <span className="font-bold text-slate-700 flex items-center gap-2">
+                    <span className="h-3 w-3 rounded-full bg-purple-500 inline-block"></span>
+                    3. Total Beban Roti Non-Sales (Sample Free & Bonus Marketing)
+                  </span>
+                  <span className="font-bold text-purple-700">-{formatCurrency(nonSalesLoss)}</span>
+                </div>
+              )}
+
               <div className="py-3 flex justify-between items-center">
                 <span className="font-bold text-slate-700 flex items-center gap-2">
                   <span className="h-3 w-3 rounded-full bg-amber-500 inline-block"></span>
-                  4. Total Beban & Pembelanjaan Operasional (Plastik, Gas, Listrik, Gaji, dll)
+                  {nonSalesLoss > 0 ? "4." : "3."} Total Beban & Pembelanjaan Operasional (Plastik, Gas, Listrik, Gaji, dll)
                 </span>
                 <span className="font-bold text-amber-600">-{formatCurrency(operasional)}</span>
               </div>
+
               <div className="pt-4 pb-1 flex justify-between items-center bg-emerald-50/80 p-4 rounded-2xl border border-emerald-200">
                 <div>
                   <p className="font-black text-slate-800 text-base">LABA BERSIH AKHIR USAHA (NET PROFIT)</p>
-                  <p className="text-xs text-slate-400 font-medium">Omset Penjualan - (HPP + Retur + Beban Operasional)</p>
+                  <p className="text-xs text-slate-400 font-medium">Penjualan Bersih - HPP Produksi - Beban Non-Sales - Beban Operasional</p>
                 </div>
                 <span className={`text-2xl font-black ${netProfit >= 0 ? "text-emerald-700" : "text-rose-600"}`}>
                   {formatCurrency(netProfit)}
@@ -567,7 +604,7 @@ export default function LaporanPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
-              {loading || !omset ? (
+              {loading || !omsetBersih ? (
                 <div className="h-64 flex items-center justify-center text-slate-400 text-sm font-medium">
                   Belum ada transaksi penjualan
                 </div>

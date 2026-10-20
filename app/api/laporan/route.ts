@@ -88,17 +88,39 @@ export async function GET(req: Request) {
       : Promise.resolve(null),
   ])
 
+  const isFreeReason = (reason: string | null) => {
+    const r = (reason || "").toLowerCase()
+    return (r.includes("free") || r.includes("tester") || r.includes("sampel")) && !r.includes("bonus")
+  }
+  const isBonusReason = (reason: string | null) => (reason || "").toLowerCase().includes("bonus")
+
+  const regularReturns = returns.filter((r) => !isFreeReason(r.reason) && !isBonusReason(r.reason))
+  const freeReturns = returns.filter((r) => isFreeReason(r.reason))
+  const bonusReturns = returns.filter((r) => isBonusReason(r.reason))
+
   const totalCost = productions.reduce((sum, p) => sum + p.totalCost, 0)
   const totalBatches = productions.reduce((sum, p) => sum + p.batchCount, 0)
-  const totalRevenue = sales.reduce((sum, s) => sum + s.totalAmount, 0)
+  const totalRevenue = sales.reduce((sum, s) => sum + s.totalAmount, 0) // Gross Sales
   const totalSalesQty = sales.reduce((sum, s) => sum + s.quantity, 0)
-  const totalReturnLoss = returns.reduce((sum, r) => sum + r.lossAmount, 0)
-  const totalReturnQty = returns.reduce((sum, r) => sum + r.quantity, 0)
+
+  const totalRegularReturnLoss = regularReturns.reduce((sum, r) => sum + r.lossAmount, 0)
+  const totalRegularReturnQty = regularReturns.reduce((sum, r) => sum + r.quantity, 0)
+
+  const totalFreeLoss = freeReturns.reduce((sum, r) => sum + r.lossAmount, 0)
+  const totalFreeQty = freeReturns.reduce((sum, r) => sum + r.quantity, 0)
+
+  const totalBonusLoss = bonusReturns.reduce((sum, r) => sum + r.lossAmount, 0)
+  const totalBonusQty = bonusReturns.reduce((sum, r) => sum + r.quantity, 0)
+
+  // Penjualan Bersih (Net Revenue) = Penjualan Kotor - Potongan Retur Reguler (Nominal HPP)
+  const netRevenue = Math.max(0, totalRevenue - totalRegularReturnLoss)
+  const netSalesQty = Math.max(0, totalSalesQty - totalRegularReturnQty)
+
   const totalOperationalExpense = operationalExpenses.reduce((sum, e) => sum + e.amount, 0)
   const totalInventoryValue = ingredients.reduce((sum, i) => sum + i.currentStock * i.pricePerUnit, 0)
 
-  // Buku Besar Net Profit Akhir = Omset - HPP Produksi - Kerugian Retur - Beban Operasional
-  const netProfit = totalRevenue - totalCost - totalReturnLoss - totalOperationalExpense
+  // Buku Besar Net Profit Akhir = Penjualan Bersih - HPP Produksi - Beban Free & Bonus - Beban Operasional
+  const netProfit = netRevenue - totalCost - totalFreeLoss - totalBonusLoss - totalOperationalExpense
 
   // Ingredient usage summary
   const ingredientUsage: Record<string, { name: string; unit: string; totalUsed: number; totalCost: number }> = {}
@@ -141,7 +163,12 @@ export async function GET(req: Request) {
     if (!dailyFinancials[dateKey]) {
       dailyFinancials[dateKey] = { date: dateKey, revenue: 0, cost: 0, returnLoss: 0, operational: 0, profit: 0 }
     }
-    dailyFinancials[dateKey].returnLoss += r.lossAmount
+    if (isFreeReason(r.reason) || isBonusReason(r.reason)) {
+      dailyFinancials[dateKey].returnLoss += r.lossAmount
+    } else {
+      // Retur reguler memotong pos revenue harian!
+      dailyFinancials[dateKey].revenue = Math.max(0, dailyFinancials[dateKey].revenue - r.lossAmount)
+    }
   }
 
   for (const e of operationalExpenses) {
@@ -165,10 +192,18 @@ export async function GET(req: Request) {
       totalCost,
       totalBatches,
       productionCount: productions.length,
-      totalRevenue,
+      totalRevenue, // Gross Sales
+      netRevenue, // Penjualan Bersih (setelah dipotong Retur Reguler HPP)
       totalSalesQty,
-      totalReturnLoss,
-      totalReturnQty,
+      netSalesQty,
+      totalRegularReturnLoss,
+      totalRegularReturnQty,
+      totalFreeLoss,
+      totalFreeQty,
+      totalBonusLoss,
+      totalBonusQty,
+      totalReturnLoss: totalRegularReturnLoss, // for backwards compat
+      totalReturnQty: totalRegularReturnQty,
       totalOperationalExpense,
       totalInventoryValue,
       netProfit,
