@@ -40,6 +40,7 @@ interface RecipeStockInfo {
   totalRegularReturned: number
   totalFree: number
   totalBonus: number
+  totalCirculatingInStores?: number
   totalOutflow: number
   availableStock: number
 }
@@ -50,6 +51,7 @@ interface StockSummary {
   totalRegularReturnedAll: number
   totalFreeAll: number
   totalBonusAll: number
+  totalCirculatingInStoresAll?: number
   totalOutflowAll: number
   availableStockAll: number
   recipes: RecipeStockInfo[]
@@ -565,10 +567,14 @@ export default function PenjualanPage() {
     )
     if (!found) return null
     let avail = found.availableStock
+    let circ = found.totalCirculatingInStores ?? Math.max(0, found.totalSold - found.totalRegularReturned)
     if (editReturnItem && (editReturnItem.recipeId === found.recipeId || editReturnItem.recipeName.toLowerCase() === found.recipeName.toLowerCase())) {
       avail += editReturnItem.quantity
+      if (!isBonus(editReturnItem) && !isFree(editReturnItem)) {
+        circ += editReturnItem.quantity
+      }
     }
-    return { ...found, availableStock: avail }
+    return { ...found, availableStock: avail, totalCirculatingInStores: circ }
   }
 
   const handleRecipeSaleSelect = (id: string) => {
@@ -597,7 +603,13 @@ export default function PenjualanPage() {
 
   const currentReturnStock = getRecipeStockForReturn(returnForm.recipeId || returnForm.recipeName)
   const returnQtyNum = parseInt(returnForm.quantity || "0", 10) || 0
-  const isReturnOverStock = currentReturnStock !== null && (returnQtyNum > currentReturnStock.availableStock || currentReturnStock.availableStock <= 0)
+  const isFormRegularReturn = returnForm.category === "RETUR"
+  const maxReturnable = currentReturnStock ? (currentReturnStock.totalCirculatingInStores ?? Math.max(0, currentReturnStock.totalSold - currentReturnStock.totalRegularReturned)) : 0
+  const isReturnOverStock = currentReturnStock !== null && (
+    isFormRegularReturn
+      ? returnQtyNum > maxReturnable
+      : (returnQtyNum > currentReturnStock.availableStock || currentReturnStock.availableStock <= 0)
+  )
 
   return (
     <div className="min-h-screen">
@@ -1904,37 +1916,75 @@ export default function PenjualanPage() {
                 </Select>
               </div>
 
-              {/* LIVE STOK ROTI SIAP JUAL DISPLAY */}
-              <div className={`p-3 rounded-2xl border text-xs transition-all ${
-                currentReturnStock
-                  ? currentReturnStock.availableStock > 0
-                    ? "bg-emerald-50/90 border-emerald-200 text-emerald-950"
-                    : "bg-rose-50/90 border-rose-200 text-rose-950"
-                  : "bg-slate-50 border-slate-200 text-slate-600"
-              }`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Package className={`h-4 w-4 ${currentReturnStock && currentReturnStock.availableStock > 0 ? "text-emerald-600" : "text-rose-500"}`} />
-                    <span className="font-bold text-xs">
-                      {currentReturnStock
-                        ? `Sisa Stok Siap Jual: ${formatNumber(currentReturnStock.availableStock)} pcs`
-                        : "Pilih resep untuk cek sisa stok"}
-                    </span>
+              {/* LIVE STOK ROTI DISPLAY (SESUAI KATEGORI RETUR ATAU FREE/BONUS) */}
+              {isFormRegularReturn ? (
+                <div className={`p-3 rounded-2xl border text-xs transition-all ${
+                  currentReturnStock
+                    ? maxReturnable > 0
+                      ? "bg-blue-50/90 border-blue-200 text-blue-950"
+                      : "bg-slate-50 border-slate-200 text-slate-700"
+                    : "bg-slate-50 border-slate-200 text-slate-600"
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Package className="h-4 w-4 text-blue-600" />
+                      <span className="font-bold text-xs">
+                        {currentReturnStock
+                          ? `Roti Beredar di Toko (Bisa Diretur): ${formatNumber(maxReturnable)} pcs`
+                          : "Pilih resep untuk cek sisa roti di toko"}
+                      </span>
+                    </div>
+                    {currentReturnStock && (
+                      <span className={`px-2 py-0.5 rounded-full font-black text-[10px] uppercase ${
+                        maxReturnable > 0 ? "bg-blue-200 text-blue-800" : "bg-slate-200 text-slate-700"
+                      }`}>
+                        {maxReturnable > 0 ? "Bisa Diretur" : "Tidak Ada Kiriman"}
+                      </span>
+                    )}
                   </div>
                   {currentReturnStock && (
-                    <span className={`px-2 py-0.5 rounded-full font-black text-[10px] uppercase ${
-                      currentReturnStock.availableStock > 0 ? "bg-emerald-200 text-emerald-800" : "bg-rose-200 text-rose-800"
-                    }`}>
-                      {currentReturnStock.availableStock > 0 ? "Tersedia" : "Stok Kosong"}
-                    </span>
+                    <>
+                      <p className="text-[11px] opacity-75 mt-1">
+                        Terkirim ke Toko: {formatNumber(currentReturnStock.totalSold)} pcs • Sudah Diretur Sebelumnya: {formatNumber(currentReturnStock.totalRegularReturned)} pcs
+                      </p>
+                      <p className="text-[11px] text-blue-700 font-medium mt-1">
+                        💡 Retur reguler menarik roti dari penjualan konsinyasi toko (2-3 hari lalu), bukan mengambil stok fresh pabrik.
+                      </p>
+                    </>
                   )}
                 </div>
-                {currentReturnStock && (
-                  <p className="text-[11px] opacity-75 mt-1">
-                    Produksi: {formatNumber(currentReturnStock.totalProduced)} pcs • Terjual: {formatNumber(currentReturnStock.totalSold)} pcs • Retur/Free/Bonus: {formatNumber(currentReturnStock.totalRegularReturned + currentReturnStock.totalFree + currentReturnStock.totalBonus)} pcs
-                  </p>
-                )}
-              </div>
+              ) : (
+                <div className={`p-3 rounded-2xl border text-xs transition-all ${
+                  currentReturnStock
+                    ? currentReturnStock.availableStock > 0
+                      ? "bg-emerald-50/90 border-emerald-200 text-emerald-950"
+                      : "bg-rose-50/90 border-rose-200 text-rose-950"
+                    : "bg-slate-50 border-slate-200 text-slate-600"
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Package className={`h-4 w-4 ${currentReturnStock && currentReturnStock.availableStock > 0 ? "text-emerald-600" : "text-rose-500"}`} />
+                      <span className="font-bold text-xs">
+                        {currentReturnStock
+                          ? `Sisa Stok Siap Jual di Pabrik: ${formatNumber(currentReturnStock.availableStock)} pcs`
+                          : "Pilih resep untuk cek sisa stok pabrik"}
+                      </span>
+                    </div>
+                    {currentReturnStock && (
+                      <span className={`px-2 py-0.5 rounded-full font-black text-[10px] uppercase ${
+                        currentReturnStock.availableStock > 0 ? "bg-emerald-200 text-emerald-800" : "bg-rose-200 text-rose-800"
+                      }`}>
+                        {currentReturnStock.availableStock > 0 ? "Tersedia" : "Stok Kosong"}
+                      </span>
+                    )}
+                  </div>
+                  {currentReturnStock && (
+                    <p className="text-[11px] opacity-75 mt-1">
+                      Produksi: {formatNumber(currentReturnStock.totalProduced)} pcs • Terjual: {formatNumber(currentReturnStock.totalSold)} pcs • Free/Bonus: {formatNumber(currentReturnStock.totalFree + currentReturnStock.totalBonus)} pcs
+                    </p>
+                  )}
+                </div>
+              )}
 
               <div className="space-y-1.5">
                 <Label className="font-bold text-slate-700">Nama Roti (Teks Bebas)</Label>
@@ -1994,12 +2044,18 @@ export default function PenjualanPage() {
                   <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
                   <div>
                     <p>
-                      {currentReturnStock.availableStock <= 0
-                        ? `Stok roti "${currentReturnStock.recipeName}" habis (${currentReturnStock.availableStock} pcs)!`
-                        : `Jumlah (${returnQtyNum} pcs) melebihi stok roti tersedia (${currentReturnStock.availableStock} pcs)!`}
+                      {isFormRegularReturn
+                        ? maxReturnable <= 0
+                          ? `Belum ada kiriman roti "${currentReturnStock.recipeName}" ke toko yang bisa diretur!`
+                          : `Jumlah retur (${returnQtyNum} pcs) melebihi sisa roti yang beredar di toko (${maxReturnable} pcs)!`
+                        : currentReturnStock.availableStock <= 0
+                          ? `Stok roti "${currentReturnStock.recipeName}" di pabrik habis (${currentReturnStock.availableStock} pcs)!`
+                          : `Jumlah (${returnQtyNum} pcs) melebihi stok roti fresh tersedia di pabrik (${currentReturnStock.availableStock} pcs)!`}
                     </p>
                     <p className="font-normal text-[11px] mt-0.5 text-rose-600">
-                      Roti {returnForm.category === "BONUS" ? "bonus agent" : returnForm.category === "FREE" ? "free tester" : "retur"} tidak boleh melebihi stok produksi roti yang ada.
+                      {isFormRegularReturn
+                        ? "Retur tidak boleh melebihi jumlah roti yang pernah dikirim/dijual ke toko."
+                        : `Roti ${returnForm.category === "BONUS" ? "bonus agent" : "free tester"} diambil dari stok fresh pabrik.`}
                     </p>
                   </div>
                 </div>
@@ -2069,7 +2125,9 @@ export default function PenjualanPage() {
                 {savingReturn
                   ? "Menyimpan Data..."
                   : isReturnOverStock
-                  ? `⚠️ Stok Tidak Mencukupi (Sisa ${currentReturnStock?.availableStock ?? 0} pcs)`
+                  ? isFormRegularReturn
+                    ? `⚠️ Melebihi Kiriman Toko (Maks ${formatNumber(maxReturnable)} pcs)`
+                    : `⚠️ Stok Pabrik Tidak Cukup (Sisa ${currentReturnStock?.availableStock ?? 0} pcs)`
                   : editReturnItem
                   ? "Update Data"
                   : returnForm.category === "BONUS"

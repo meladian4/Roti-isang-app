@@ -9,6 +9,7 @@ export interface RecipeStockInfo {
   totalRegularReturned: number
   totalFree: number
   totalBonus: number
+  totalCirculatingInStores: number
   totalOutflow: number
   availableStock: number
 }
@@ -19,6 +20,7 @@ export interface StockSummary {
   totalRegularReturnedAll: number
   totalFreeAll: number
   totalBonusAll: number
+  totalCirculatingInStoresAll: number
   totalOutflowAll: number
   availableStockAll: number
   recipes: RecipeStockInfo[]
@@ -120,8 +122,15 @@ export async function getRecipeStock(
     }
   }
 
-  const totalOutflow = totalSold + totalRegularReturned + totalFree + totalBonus
-  const availableStock = totalProduced - totalOutflow
+  // Outflow dari rak pabrik hanya mencakup roti yang keluar dari pabrik:
+  // 1. Roti yang dikirim/dijual ke toko (totalSold)
+  // 2. Roti tester (totalFree)
+  // 3. Roti bonus agen (totalBonus)
+  // Retur reguler tidak menambah outflow pabrik karena fisiknya sudah keluar saat transaksi penjualan.
+  const totalOutflow = totalSold + totalFree + totalBonus
+  const availableStock = Math.max(0, totalProduced - totalOutflow)
+  // Roti yang sedang beredar di toko dan belum diretur:
+  const totalCirculatingInStores = Math.max(0, totalSold - totalRegularReturned)
 
   return {
     recipeId: recipe.id,
@@ -132,6 +141,7 @@ export async function getRecipeStock(
     totalRegularReturned,
     totalFree,
     totalBonus,
+    totalCirculatingInStores,
     totalOutflow,
     availableStock,
   }
@@ -192,8 +202,10 @@ export async function getAllRecipesStock(): Promise<StockSummary> {
       }
     }
 
-    const totalOutflow = totalSold + totalRegularReturned + totalFree + totalBonus
-    const availableStock = totalProduced - totalOutflow
+    // Outflow pabrik = penjualan/kirim toko + free tester + bonus agen
+    const totalOutflow = totalSold + totalFree + totalBonus
+    const availableStock = Math.max(0, totalProduced - totalOutflow)
+    const totalCirculatingInStores = Math.max(0, totalSold - totalRegularReturned)
 
     totalProducedAll += totalProduced
     totalSoldAll += totalSold
@@ -210,14 +222,15 @@ export async function getAllRecipesStock(): Promise<StockSummary> {
       totalRegularReturned,
       totalFree,
       totalBonus,
+      totalCirculatingInStores,
       totalOutflow,
       availableStock,
     }
   })
 
-  const totalOutflowAll =
-    totalSoldAll + totalRegularReturnedAll + totalFreeAll + totalBonusAll
-  const availableStockAll = totalProducedAll - totalOutflowAll
+  const totalOutflowAll = totalSoldAll + totalFreeAll + totalBonusAll
+  const availableStockAll = Math.max(0, totalProducedAll - totalOutflowAll)
+  const totalCirculatingInStoresAll = Math.max(0, totalSoldAll - totalRegularReturnedAll)
 
   return {
     totalProducedAll,
@@ -225,6 +238,7 @@ export async function getAllRecipesStock(): Promise<StockSummary> {
     totalRegularReturnedAll,
     totalFreeAll,
     totalBonusAll,
+    totalCirculatingInStoresAll,
     totalOutflowAll,
     availableStockAll,
     recipes: recipeStockList,

@@ -63,19 +63,36 @@ export async function POST(req: Request) {
     if (validRecipeId) {
       const stockInfo = await getRecipeStock(validRecipeId)
       if (stockInfo) {
-        if (qty > stockInfo.availableStock) {
-          const typeLabel = (reason || "").toLowerCase().includes("bonus")
-            ? "Bonus Agent"
-            : (reason || "").toLowerCase().includes("free")
-            ? "Roti Free"
-            : "Retur"
-          return NextResponse.json(
-            {
-              error: `Stok roti "${stockInfo.recipeName}" tidak mencukupi untuk ${typeLabel}! Sisa stok tersedia: ${stockInfo.availableStock} pcs. Tidak bisa mencatat ${qty} pcs. Silakan catat produksi terlebih dahulu.`,
-              availableStock: stockInfo.availableStock,
-            },
-            { status: 400 }
-          )
+        const isBonus = (reason || "").toLowerCase().includes("bonus")
+        const isFree =
+          (reason || "").toLowerCase().includes("free") ||
+          (reason || "").toLowerCase().includes("tester") ||
+          (reason || "").toLowerCase().includes("sampel")
+
+        if (isBonus || isFree) {
+          // Free & Bonus mengambil roti fresh dari pabrik
+          if (qty > stockInfo.availableStock) {
+            const typeLabel = isBonus ? "Bonus Agent" : "Roti Free (Tester)"
+            return NextResponse.json(
+              {
+                error: `Stok roti "${stockInfo.recipeName}" di pabrik tidak mencukupi untuk ${typeLabel}! Sisa stok pabrik tersedia: ${stockInfo.availableStock} pcs. Tidak bisa mencatat ${qty} pcs fresh.`,
+                availableStock: stockInfo.availableStock,
+              },
+              { status: 400 }
+            )
+          }
+        } else {
+          // Retur Reguler: Roti ditarik dari peredaran toko konsinyasi (penjualan 2-3 hari lalu)
+          const maxReturnable = stockInfo.totalCirculatingInStores ?? Math.max(0, stockInfo.totalSold - stockInfo.totalRegularReturned)
+          if (qty > maxReturnable) {
+            return NextResponse.json(
+              {
+                error: `Jumlah retur (${qty} pcs) melebihi total roti "${stockInfo.recipeName}" yang sedang beredar di toko (${maxReturnable} pcs)! Terkirim ke toko: ${stockInfo.totalSold} pcs, sudah diretur sebelumnya: ${stockInfo.totalRegularReturned} pcs.`,
+                availableStock: maxReturnable,
+              },
+              { status: 400 }
+            )
+          }
         }
       }
     }
