@@ -78,19 +78,19 @@ export default function DashboardPage() {
         </div>
 
         {/* Metric Cards Grid - 4 Main Financial Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 md:gap-5">
           {/* Card 1: Omset Penjualan */}
-          <div className="glass-card rounded-2xl p-6 relative overflow-hidden group">
-            <div className="flex items-center gap-4">
-              <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/25 group-hover:scale-110 transition-transform duration-300">
-                <DollarSign className="h-6 w-6" />
+          <div className="glass-card rounded-2xl sm:rounded-3xl p-3 sm:p-5 md:p-6 relative overflow-hidden group">
+            <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4">
+              <div className="p-2 sm:p-3 md:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/25 group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+                <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" />
               </div>
-              <div>
-                <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Omset Penjualan</p>
-                <p className="text-xl font-black text-emerald-600 tracking-tight mt-0.5">
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] sm:text-xs font-bold tracking-wider text-slate-400 uppercase truncate">Omset Penjualan</p>
+                <p className="text-sm sm:text-base md:text-xl font-black text-emerald-600 tracking-tight mt-0.5 truncate" title={formatCurrency(data?.summary.totalRevenue || 0)}>
                   {formatCurrency(data?.summary.totalRevenue || 0)}
                 </p>
-                <p className="text-[11px] font-semibold text-slate-400 mt-1">
+                <p className="text-[9px] sm:text-[11px] font-semibold text-slate-400 mt-0.5 truncate">
                   {data?.summary.totalSalesQty || 0} pcs terjual
                 </p>
               </div>
@@ -98,17 +98,17 @@ export default function DashboardPage() {
           </div>
 
           {/* Card 2: HPP Produksi */}
-          <div className="glass-card rounded-2xl p-6 relative overflow-hidden group">
-            <div className="flex items-center gap-4">
-              <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-lg shadow-orange-500/25 group-hover:scale-110 transition-transform duration-300">
-                <Factory className="h-6 w-6" />
+          <div className="glass-card rounded-2xl sm:rounded-3xl p-3 sm:p-5 md:p-6 relative overflow-hidden group">
+            <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4">
+              <div className="p-2 sm:p-3 md:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-lg shadow-orange-500/25 group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+                <Factory className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" />
               </div>
-              <div>
-                <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Biaya Produksi (HPP)</p>
-                <p className="text-xl font-black text-slate-800 tracking-tight mt-0.5">
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] sm:text-xs font-bold tracking-wider text-slate-400 uppercase truncate">Biaya HPP</p>
+                <p className="text-sm sm:text-base md:text-xl font-black text-slate-800 tracking-tight mt-0.5 truncate" title={formatCurrency(data?.summary.totalCost || 0)}>
                   {formatCurrency(data?.summary.totalCost || 0)}
                 </p>
-                <p className="text-[11px] font-semibold text-slate-400 mt-1">
+                <p className="text-[9px] sm:text-[11px] font-semibold text-slate-400 mt-0.5 truncate">
                   {data?.summary.totalBatches || 0} Loyang ({data?.summary.productionCount || 0} Adonan)
                 </p>
               </div>
@@ -116,42 +116,42 @@ export default function DashboardPage() {
           </div>
 
           {/* Card 3: Kerugian Retur */}
-          <div className="glass-card rounded-2xl p-6 relative overflow-hidden group">
-            <div className="flex items-center gap-4">
-              <div className="p-4 rounded-2xl bg-gradient-to-br from-rose-500 to-red-600 text-white shadow-lg shadow-rose-500/25 group-hover:scale-110 transition-transform duration-300">
-                <RotateCcw className="h-6 w-6" />
+          <div className="glass-card rounded-2xl sm:rounded-3xl p-3 sm:p-5 md:p-6 relative overflow-hidden group">
+            <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4">
+              <div className="p-2 sm:p-3 md:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-rose-500 to-red-600 text-white shadow-lg shadow-rose-500/25 group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+                <RotateCcw className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" />
               </div>
-              <div>
-                <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Kerugian Retur</p>
-                <p className="text-xl font-black text-rose-600 tracking-tight mt-0.5">
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] sm:text-xs font-bold tracking-wider text-slate-400 uppercase truncate">Kerugian Retur</p>
+                <p className="text-sm sm:text-base md:text-xl font-black text-rose-600 tracking-tight mt-0.5 truncate" title={formatCurrency(data?.summary.totalReturnLoss || 0)}>
                   {formatCurrency(data?.summary.totalReturnLoss || 0)}
                 </p>
-                <p className="text-[11px] font-semibold text-slate-400 mt-1">
-                  {data?.summary.totalReturnQty || 0} pcs retur/kadaluarsa
+                <p className="text-[9px] sm:text-[11px] font-semibold text-slate-400 mt-0.5 truncate">
+                  {data?.summary.totalReturnQty || 0} pcs retur
                 </p>
               </div>
             </div>
           </div>
 
           {/* Card 4: Laba Bersih */}
-          <div className="glass-card rounded-2xl p-6 relative overflow-hidden group">
-            <div className="flex items-center gap-4">
-              <div className={`p-4 rounded-2xl text-white shadow-lg transition-transform duration-300 group-hover:scale-110 ${
+          <div className="glass-card rounded-2xl sm:rounded-3xl p-3 sm:p-5 md:p-6 relative overflow-hidden group">
+            <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4">
+              <div className={`p-2 sm:p-3 md:p-4 rounded-xl sm:rounded-2xl text-white shadow-lg transition-transform duration-300 group-hover:scale-110 flex-shrink-0 ${
                 isProfitPositive
                   ? "bg-gradient-to-br from-teal-600 to-emerald-700 shadow-teal-500/25"
                   : "bg-gradient-to-br from-red-600 to-rose-700 shadow-rose-500/25"
               }`}>
-                <Wallet className="h-6 w-6" />
+                <Wallet className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" />
               </div>
-              <div>
-                <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Laba Bersih (Estimasi)</p>
-                <p className={`text-xl font-black tracking-tight mt-0.5 ${
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] sm:text-xs font-bold tracking-wider text-slate-400 uppercase truncate">Laba Bersih</p>
+                <p className={`text-sm sm:text-base md:text-xl font-black tracking-tight mt-0.5 truncate ${
                   isProfitPositive ? "text-emerald-700" : "text-rose-600"
-                }`}>
+                }`} title={formatCurrency(netProfit)}>
                   {formatCurrency(netProfit)}
                 </p>
-                <p className="text-[11px] font-semibold text-slate-400 mt-1">
-                  Omset - HPP - Retur
+                <p className="text-[9px] sm:text-[11px] font-semibold text-slate-400 mt-0.5 truncate">
+                  Estimasi Bersih
                 </p>
               </div>
             </div>

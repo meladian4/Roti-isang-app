@@ -12,20 +12,20 @@ export function Header({ title, description }: HeaderProps) {
   const { data: session } = useSession()
 
   return (
-    <header className="sticky top-0 z-10 flex items-center justify-between px-4 sm:px-8 py-3.5 sm:py-5 bg-white/80 backdrop-blur-md border-b border-emerald-500/10 shadow-xs">
-      <div>
-        <h2 className="text-lg sm:text-2xl font-black tracking-tight bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-800 bg-clip-text text-transparent">
+    <header className="sticky top-0 z-10 flex items-center justify-between px-3.5 sm:px-8 py-3 sm:py-5 bg-white/80 backdrop-blur-md border-b border-emerald-500/10 shadow-xs gap-3">
+      <div className="min-w-0 flex-1">
+        <h2 className="text-base sm:text-2xl font-black tracking-tight bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-800 bg-clip-text text-transparent truncate">
           {title}
         </h2>
         {description && (
-          <p className="text-[11px] sm:text-xs font-medium text-slate-500 mt-0.5 flex items-center gap-1.5">
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500/80"></span>
-            {description}
+          <p className="text-[10px] sm:text-xs font-medium text-slate-500 mt-0.5 flex items-center gap-1.5 truncate">
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500/80 flex-shrink-0"></span>
+            <span className="truncate">{description}</span>
           </p>
         )}
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
         <div className="text-right hidden sm:block">
           <p className="text-sm font-bold text-slate-800 leading-none">
             {session?.user?.name || "Admin Roti Isang"}
@@ -39,8 +39,8 @@ export function Header({ title, description }: HeaderProps) {
         </div>
         
         <div className="relative p-0.5 rounded-2xl bg-gradient-to-tr from-amber-400 via-orange-500 to-rose-500 shadow-md shadow-orange-500/20">
-          <div className="h-10 w-10 rounded-[14px] bg-white flex items-center justify-center">
-            <User className="h-5 w-5 text-orange-600" />
+          <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-[14px] bg-white flex items-center justify-center">
+            <User className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
           </div>
         </div>
       </div>

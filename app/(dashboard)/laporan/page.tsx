@@ -252,12 +252,12 @@ export default function LaporanPage() {
 
         {/* Filter Bar & Monthly Period Picker */}
         <div className="no-print space-y-4">
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white/80 backdrop-blur-md p-5 rounded-3xl border border-emerald-500/10 shadow-xs">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 sm:gap-4 bg-white/80 backdrop-blur-md p-3 sm:p-5 rounded-2xl sm:rounded-3xl border border-emerald-500/10 shadow-xs">
             
             {/* Quick Period Buttons & Month Selector */}
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider mr-1 flex items-center gap-1">
-                <Filter className="h-3.5 w-3.5 text-emerald-600" /> Filter Periode:
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 w-full lg:w-auto">
+              <span className="text-[11px] sm:text-xs font-extrabold text-slate-400 uppercase tracking-wider mr-1 flex items-center gap-1">
+                <Filter className="h-3.5 w-3.5 text-emerald-600" /> Filter:
               </span>
               {[
                 { val: "month", label: "Bulan Ini" },
@@ -270,16 +270,16 @@ export default function LaporanPage() {
                   variant={period === p.val ? "default" : "outline"}
                   size="sm"
                   onClick={() => { setStartDate(""); setEndDate(""); setPeriod(p.val) }}
-                  className="rounded-xl font-bold text-xs"
+                  className="rounded-xl font-bold text-[11px] sm:text-xs px-2.5 sm:px-3 h-8"
                 >
                   {p.label}
                 </Button>
               ))}
 
               {/* Specific Month & Year Select Dropdowns */}
-              <div className="flex items-center gap-1.5 ml-2 pl-2 border-l border-slate-200">
+              <div className="flex items-center gap-1.5 pt-1 sm:pt-0 sm:ml-2 sm:pl-2 sm:border-l sm:border-slate-200">
                 <Select value={selectedMonth} onValueChange={handleMonthSelect}>
-                  <SelectTrigger className="h-8 w-32 text-xs font-bold rounded-xl bg-white border-emerald-300 text-emerald-900">
+                  <SelectTrigger className="h-8 w-28 sm:w-32 text-xs font-bold rounded-xl bg-white border-emerald-300 text-emerald-900">
                     <SelectValue placeholder="Pilih Bulan" />
                   </SelectTrigger>
                   <SelectContent>
@@ -305,21 +305,21 @@ export default function LaporanPage() {
             </div>
 
             {/* Actions: Tutup Buku & Export */}
-            <div className="flex flex-wrap gap-2 w-full lg:w-auto">
+            <div className="flex flex-wrap gap-1.5 sm:gap-2 w-full lg:w-auto pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100">
               {!isLocked ? (
-                <Button onClick={handleTutupBuku} variant="secondary" size="sm" className="rounded-xl text-xs font-bold text-white shadow-md bg-amber-500 hover:bg-amber-600 shadow-amber-500/20">
-                  <Lock className="h-4 w-4" /> Tutup Buku Bulanan
+                <Button onClick={handleTutupBuku} variant="secondary" size="sm" className="rounded-xl text-[11px] sm:text-xs font-bold text-white shadow-md bg-amber-500 hover:bg-amber-600 shadow-amber-500/20 h-8 px-2.5 sm:px-3">
+                  <Lock className="h-3.5 w-3.5" /> Tutup Buku
                 </Button>
               ) : (
-                <Button onClick={handleTutupBuku} variant="outline" size="sm" className="rounded-xl text-xs font-bold border-amber-300 text-amber-800 hover:bg-amber-50">
-                  <Unlock className="h-4 w-4" /> Buka Kunci Buku
+                <Button onClick={handleTutupBuku} variant="outline" size="sm" className="rounded-xl text-[11px] sm:text-xs font-bold border-amber-300 text-amber-800 hover:bg-amber-50 h-8 px-2.5 sm:px-3">
+                  <Unlock className="h-3.5 w-3.5" /> Buka Kunci
                 </Button>
               )}
-              <Button onClick={handleExportCSV} variant="outline" size="sm" className="rounded-xl text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 font-bold">
-                <Download className="h-4 w-4" /> Excel / CSV
+              <Button onClick={handleExportCSV} variant="outline" size="sm" className="rounded-xl text-[11px] sm:text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 font-bold h-8 px-2.5 sm:px-3">
+                <Download className="h-3.5 w-3.5" /> Excel / CSV
               </Button>
-              <Button onClick={handlePrint} variant="default" size="sm" className="rounded-xl text-xs shadow-md shadow-emerald-500/20 font-bold">
-                <Printer className="h-4 w-4" /> Cetak PDF
+              <Button onClick={handlePrint} variant="default" size="sm" className="rounded-xl text-[11px] sm:text-xs shadow-md shadow-emerald-500/20 font-bold h-8 px-2.5 sm:px-3">
+                <Printer className="h-3.5 w-3.5" /> Cetak PDF
               </Button>
             </div>
 
@@ -332,69 +332,79 @@ export default function LaporanPage() {
           <p className="text-sm">Periode: {period === "specific-month" ? `${MONTHS.find(m=>m.val===selectedMonth)?.label} ${selectedYear}` : period} | Cetak: {new Date().toLocaleDateString("id-ID")}</p>
         </div>
 
-        {/* Financial Summary Metric Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <div className="glass-card rounded-3xl p-4 relative overflow-hidden">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-emerald-500 text-white rounded-2xl shadow-md shadow-emerald-500/20">
-                <DollarSign className="h-5 w-5" />
+        {/* Financial Summary Metric Cards (Responsive: 2 cols on mobile, 5 cols on desktop) */}
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-2.5 sm:gap-4">
+          <div className="glass-card rounded-2xl sm:rounded-3xl p-3 sm:p-4 relative overflow-hidden">
+            <div className="flex items-center gap-2.5 sm:gap-3">
+              <div className="p-2 sm:p-3 bg-emerald-500 text-white rounded-xl sm:rounded-2xl shadow-md shadow-emerald-500/20 flex-shrink-0">
+                <DollarSign className="h-4 w-4 sm:h-5 sm:w-5" />
               </div>
-              <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Penjualan Bersih (+)</p>
-                <p className="text-lg font-black text-emerald-600 tracking-tight mt-0.5">{loading ? "..." : formatCurrency(omsetBersih)}</p>
-                <p className="text-[10px] text-slate-400 font-medium">Kotor: {formatCurrency(omsetKotor)}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="glass-card rounded-3xl p-4 relative overflow-hidden">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-orange-500 text-white rounded-2xl shadow-md shadow-orange-500/20">
-                <Factory className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">HPP Produksi (-)</p>
-                <p className="text-lg font-black text-slate-800 tracking-tight mt-0.5">{loading ? "..." : formatCurrency(hpp)}</p>
-                <p className="text-[10px] text-slate-400 font-medium">Bahan Terpakai</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider truncate">Penjualan Bersih (+)</p>
+                <p className="text-sm sm:text-base lg:text-lg font-black text-emerald-600 tracking-tight mt-0.5 truncate" title={formatCurrency(omsetBersih)}>
+                  {loading ? "..." : formatCurrency(omsetBersih)}
+                </p>
+                <p className="text-[9px] sm:text-[10px] text-slate-400 font-medium truncate">Kotor: {formatCurrency(omsetKotor)}</p>
               </div>
             </div>
           </div>
 
-          <div className="glass-card rounded-3xl p-4 relative overflow-hidden">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-rose-500 text-white rounded-2xl shadow-md shadow-rose-500/20">
-                <RotateCcw className="h-5 w-5" />
+          <div className="glass-card rounded-2xl sm:rounded-3xl p-3 sm:p-4 relative overflow-hidden">
+            <div className="flex items-center gap-2.5 sm:gap-3">
+              <div className="p-2 sm:p-3 bg-orange-500 text-white rounded-xl sm:rounded-2xl shadow-md shadow-orange-500/20 flex-shrink-0">
+                <Factory className="h-4 w-4 sm:h-5 sm:w-5" />
               </div>
-              <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Potongan Retur (-)</p>
-                <p className="text-lg font-black text-rose-600 tracking-tight mt-0.5">{loading ? "..." : formatCurrency(regularReturnLoss)}</p>
-                <p className="text-[10px] text-rose-500 font-semibold">Potong Penjualan (HPP)</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="glass-card rounded-3xl p-4 relative overflow-hidden">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-amber-500 text-white rounded-2xl shadow-md shadow-amber-500/20">
-                <Wallet className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Beban Operasional (-)</p>
-                <p className="text-lg font-black text-amber-600 tracking-tight mt-0.5">{loading ? "..." : formatCurrency(operasional)}</p>
-                <p className="text-[10px] text-slate-400 font-medium">Gas, Plastik, Listrik</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider truncate">HPP Produksi (-)</p>
+                <p className="text-sm sm:text-base lg:text-lg font-black text-slate-800 tracking-tight mt-0.5 truncate" title={formatCurrency(hpp)}>
+                  {loading ? "..." : formatCurrency(hpp)}
+                </p>
+                <p className="text-[9px] sm:text-[10px] text-slate-400 font-medium truncate">Bahan Terpakai</p>
               </div>
             </div>
           </div>
 
-          <div className="rounded-3xl p-4 relative overflow-hidden bg-gradient-to-br from-emerald-600 via-teal-600 to-emerald-700 text-white shadow-xl shadow-emerald-700/25 border border-emerald-400/30">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-white/20 text-white rounded-2xl backdrop-blur-md shadow-inner">
-                <TrendingUp className="h-5 w-5" />
+          <div className="glass-card rounded-2xl sm:rounded-3xl p-3 sm:p-4 relative overflow-hidden">
+            <div className="flex items-center gap-2.5 sm:gap-3">
+              <div className="p-2 sm:p-3 bg-rose-500 text-white rounded-xl sm:rounded-2xl shadow-md shadow-rose-500/20 flex-shrink-0">
+                <RotateCcw className="h-4 w-4 sm:h-5 sm:w-5" />
               </div>
-              <div>
-                <p className="text-[10px] font-extrabold text-emerald-100 uppercase tracking-wider">Laba Bersih Akhir</p>
-                <p className="text-lg font-black text-white tracking-tight mt-0.5">{loading ? "..." : formatCurrency(netProfit)}</p>
-                <p className="text-[10px] text-emerald-200 font-medium">Bulanan</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider truncate">Potongan Retur (-)</p>
+                <p className="text-sm sm:text-base lg:text-lg font-black text-rose-600 tracking-tight mt-0.5 truncate" title={formatCurrency(regularReturnLoss)}>
+                  {loading ? "..." : formatCurrency(regularReturnLoss)}
+                </p>
+                <p className="text-[9px] sm:text-[10px] text-rose-500 font-semibold truncate">Potong Penjualan (HPP)</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="glass-card rounded-2xl sm:rounded-3xl p-3 sm:p-4 relative overflow-hidden">
+            <div className="flex items-center gap-2.5 sm:gap-3">
+              <div className="p-2 sm:p-3 bg-amber-500 text-white rounded-xl sm:rounded-2xl shadow-md shadow-amber-500/20 flex-shrink-0">
+                <Wallet className="h-4 w-4 sm:h-5 sm:w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider truncate">Beban Operasional (-)</p>
+                <p className="text-sm sm:text-base lg:text-lg font-black text-amber-600 tracking-tight mt-0.5 truncate" title={formatCurrency(operasional)}>
+                  {loading ? "..." : formatCurrency(operasional)}
+                </p>
+                <p className="text-[9px] sm:text-[10px] text-slate-400 font-medium truncate">Gas, Plastik, Listrik</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="col-span-2 lg:col-span-1 rounded-2xl sm:rounded-3xl p-3 sm:p-4 relative overflow-hidden bg-gradient-to-br from-emerald-600 via-teal-600 to-emerald-700 text-white shadow-xl shadow-emerald-700/25 border border-emerald-400/30">
+            <div className="flex items-center gap-2.5 sm:gap-3">
+              <div className="p-2 sm:p-3 bg-white/20 text-white rounded-xl sm:rounded-2xl backdrop-blur-md shadow-inner flex-shrink-0">
+                <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] sm:text-xs font-extrabold text-emerald-100 uppercase tracking-wider truncate">Laba Bersih Akhir</p>
+                <p className="text-base sm:text-lg lg:text-xl font-black text-white tracking-tight mt-0.5 truncate" title={formatCurrency(netProfit)}>
+                  {loading ? "..." : formatCurrency(netProfit)}
+                </p>
+                <p className="text-[9px] sm:text-[10px] text-emerald-200 font-medium truncate">Bulanan</p>
               </div>
             </div>
           </div>

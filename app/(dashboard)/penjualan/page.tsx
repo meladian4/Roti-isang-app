@@ -676,55 +676,63 @@ export default function PenjualanPage() {
         </div>
 
         {/* Financial Summary Metric Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5">
-          <div className="glass-card rounded-2xl p-4 sm:p-5 relative overflow-hidden group">
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/25">
-                <DollarSign className="h-5 w-5 sm:h-6 sm:w-6" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-4 md:gap-5">
+          <div className="glass-card rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-5 relative overflow-hidden group">
+            <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4">
+              <div className="p-2 sm:p-3 md:p-3.5 rounded-xl sm:rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/25 flex-shrink-0">
+                <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" />
               </div>
-              <div>
-                <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Penjualan Bersih (Net)</p>
-                <p className="text-lg sm:text-xl font-black text-emerald-600 tracking-tight mt-0.5">{formatCurrency(totalOmsetBersih)}</p>
-                <p className="text-[10px] text-slate-400 font-medium">Kotor: {formatCurrency(totalOmsetKotor)}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="glass-card rounded-2xl p-4 sm:p-5 relative overflow-hidden group">
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-rose-500 to-red-600 text-white shadow-lg shadow-rose-500/25">
-                <RotateCcw className="h-5 w-5 sm:h-6 sm:w-6" />
-              </div>
-              <div>
-                <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Potongan Retur Reguler</p>
-                <p className="text-lg sm:text-xl font-black text-rose-600 tracking-tight mt-0.5">-{formatCurrency(totalReturnLoss)}</p>
-                <p className="text-[10px] text-rose-500 font-semibold">{formatNumber(totalPcsRegularReturn)} pcs roti (HPP)</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] sm:text-xs font-bold tracking-wider text-slate-400 uppercase truncate">Penjualan Bersih</p>
+                <p className="text-sm sm:text-base md:text-xl font-black text-emerald-600 tracking-tight mt-0.5 truncate" title={formatCurrency(totalOmsetBersih)}>
+                  {formatCurrency(totalOmsetBersih)}
+                </p>
+                <p className="text-[9px] sm:text-[10px] text-slate-400 font-medium truncate">Kotor: {formatCurrency(totalOmsetKotor)}</p>
               </div>
             </div>
           </div>
 
-          <div className="glass-card rounded-2xl p-4 sm:p-5 relative overflow-hidden group">
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-lg shadow-orange-500/25">
-                <ShoppingBag className="h-5 w-5 sm:h-6 sm:w-6" />
+          <div className="glass-card rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-5 relative overflow-hidden group">
+            <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4">
+              <div className="p-2 sm:p-3 md:p-3.5 rounded-xl sm:rounded-2xl bg-gradient-to-br from-rose-500 to-red-600 text-white shadow-lg shadow-rose-500/25 flex-shrink-0">
+                <RotateCcw className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" />
               </div>
-              <div>
-                <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Roti Terjual Bersih</p>
-                <p className="text-lg sm:text-xl font-black text-slate-800 tracking-tight mt-0.5">{formatNumber(totalPcsNetSold)} pcs</p>
-                <p className="text-[10px] text-slate-400 font-medium">Kirim: {formatNumber(totalPcsSold)} pcs</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] sm:text-xs font-bold tracking-wider text-slate-400 uppercase truncate">Potongan Retur</p>
+                <p className="text-sm sm:text-base md:text-xl font-black text-rose-600 tracking-tight mt-0.5 truncate" title={`-${formatCurrency(totalReturnLoss)}`}>
+                  -{formatCurrency(totalReturnLoss)}
+                </p>
+                <p className="text-[9px] sm:text-[10px] text-rose-500 font-semibold truncate">{formatNumber(totalPcsRegularReturn)} pcs (HPP)</p>
               </div>
             </div>
           </div>
 
-          <div className="glass-card rounded-2xl p-4 sm:p-5 relative overflow-hidden group">
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-purple-500 to-violet-600 text-white shadow-lg shadow-purple-500/25">
-                <Award className="h-5 w-5 sm:h-6 sm:w-6" />
+          <div className="glass-card rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-5 relative overflow-hidden group">
+            <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4">
+              <div className="p-2 sm:p-3 md:p-3.5 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-lg shadow-orange-500/25 flex-shrink-0">
+                <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" />
               </div>
-              <div>
-                <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Total Bonus Agent</p>
-                <p className="text-lg sm:text-xl font-black text-purple-700 tracking-tight mt-0.5">{formatNumber(totalPcsBonus)} pcs</p>
-                <p className="text-[10px] text-purple-600 font-medium">{formatCurrency(totalBonusLoss)}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] sm:text-xs font-bold tracking-wider text-slate-400 uppercase truncate">Roti Terjual Bersih</p>
+                <p className="text-sm sm:text-base md:text-xl font-black text-slate-800 tracking-tight mt-0.5 truncate" title={`${formatNumber(totalPcsNetSold)} pcs`}>
+                  {formatNumber(totalPcsNetSold)} pcs
+                </p>
+                <p className="text-[9px] sm:text-[10px] text-slate-400 font-medium truncate">Kirim: {formatNumber(totalPcsSold)} pcs</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="glass-card rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-5 relative overflow-hidden group">
+            <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4">
+              <div className="p-2 sm:p-3 md:p-3.5 rounded-xl sm:rounded-2xl bg-gradient-to-br from-purple-500 to-violet-600 text-white shadow-lg shadow-purple-500/25 flex-shrink-0">
+                <Award className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] sm:text-xs font-bold tracking-wider text-slate-400 uppercase truncate">Bonus Agent</p>
+                <p className="text-sm sm:text-base md:text-xl font-black text-purple-700 tracking-tight mt-0.5 truncate" title={`${formatNumber(totalPcsBonus)} pcs`}>
+                  {formatNumber(totalPcsBonus)} pcs
+                </p>
+                <p className="text-[9px] sm:text-[10px] text-purple-600 font-medium truncate">{formatCurrency(totalBonusLoss)}</p>
               </div>
             </div>
           </div>

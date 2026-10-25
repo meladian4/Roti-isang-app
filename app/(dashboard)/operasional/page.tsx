@@ -167,51 +167,63 @@ export default function OperasionalPage() {
         )}
 
         {/* Financial Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
-          <div className="glass-card rounded-2xl p-5 relative overflow-hidden group">
-            <div className="flex items-center gap-4">
-              <div className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-lg shadow-orange-500/25">
-                <Wallet className="h-6 w-6" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 md:gap-5">
+          <div className="glass-card rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-5 relative overflow-hidden group">
+            <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4">
+              <div className="p-2 sm:p-3 md:p-3.5 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-lg shadow-orange-500/25 flex-shrink-0">
+                <Wallet className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" />
               </div>
-              <div>
-                <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Total Beban Operasional</p>
-                <p className="text-xl font-black text-amber-600 tracking-tight mt-0.5">{formatCurrency(totalBebanOperasional)}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="glass-card rounded-2xl p-5 relative overflow-hidden group">
-            <div className="flex items-center gap-4">
-              <div className="p-3.5 rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-600 text-white shadow-lg shadow-teal-500/25">
-                <Package className="h-6 w-6" />
-              </div>
-              <div>
-                <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Kemasan & Plastik</p>
-                <p className="text-xl font-black text-slate-800 tracking-tight mt-0.5">{formatCurrency(totalKemasan)}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] sm:text-xs font-bold tracking-wider text-slate-400 uppercase truncate">Total Beban</p>
+                <p className="text-sm sm:text-base md:text-xl font-black text-amber-600 tracking-tight mt-0.5 truncate" title={formatCurrency(totalBebanOperasional)}>
+                  {formatCurrency(totalBebanOperasional)}
+                </p>
+                <p className="text-[9px] sm:text-[10px] text-slate-400 font-medium truncate">Semua Kategori</p>
               </div>
             </div>
           </div>
 
-          <div className="glass-card rounded-2xl p-5 relative overflow-hidden group">
-            <div className="flex items-center gap-4">
-              <div className="p-3.5 rounded-2xl bg-gradient-to-br from-rose-500 to-red-600 text-white shadow-lg shadow-rose-500/25">
-                <Flame className="h-6 w-6" />
+          <div className="glass-card rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-5 relative overflow-hidden group">
+            <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4">
+              <div className="p-2 sm:p-3 md:p-3.5 rounded-xl sm:rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-600 text-white shadow-lg shadow-teal-500/25 flex-shrink-0">
+                <Package className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" />
               </div>
-              <div>
-                <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Gas & Bahan Bakar</p>
-                <p className="text-xl font-black text-rose-600 tracking-tight mt-0.5">{formatCurrency(totalEnergi)}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] sm:text-xs font-bold tracking-wider text-slate-400 uppercase truncate">Kemasan & Plastik</p>
+                <p className="text-sm sm:text-base md:text-xl font-black text-slate-800 tracking-tight mt-0.5 truncate" title={formatCurrency(totalKemasan)}>
+                  {formatCurrency(totalKemasan)}
+                </p>
+                <p className="text-[9px] sm:text-[10px] text-slate-400 font-medium truncate">Kemasan Roti</p>
               </div>
             </div>
           </div>
 
-          <div className="glass-card rounded-2xl p-5 relative overflow-hidden group">
-            <div className="flex items-center gap-4">
-              <div className="p-3.5 rounded-2xl bg-gradient-to-br from-purple-500 to-violet-600 text-white shadow-lg shadow-purple-500/25">
-                <CreditCard className="h-6 w-6" />
+          <div className="glass-card rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-5 relative overflow-hidden group">
+            <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4">
+              <div className="p-2 sm:p-3 md:p-3.5 rounded-xl sm:rounded-2xl bg-gradient-to-br from-rose-500 to-red-600 text-white shadow-lg shadow-rose-500/25 flex-shrink-0">
+                <Flame className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" />
               </div>
-              <div>
-                <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Operasional & Gaji</p>
-                <p className="text-xl font-black text-slate-800 tracking-tight mt-0.5">{formatCurrency(totalToko)}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] sm:text-xs font-bold tracking-wider text-slate-400 uppercase truncate">Gas & Energi</p>
+                <p className="text-sm sm:text-base md:text-xl font-black text-rose-600 tracking-tight mt-0.5 truncate" title={formatCurrency(totalEnergi)}>
+                  {formatCurrency(totalEnergi)}
+                </p>
+                <p className="text-[9px] sm:text-[10px] text-slate-400 font-medium truncate">Bahan Bakar Oven</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="glass-card rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-5 relative overflow-hidden group">
+            <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4">
+              <div className="p-2 sm:p-3 md:p-3.5 rounded-xl sm:rounded-2xl bg-gradient-to-br from-purple-500 to-violet-600 text-white shadow-lg shadow-purple-500/25 flex-shrink-0">
+                <CreditCard className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] sm:text-xs font-bold tracking-wider text-slate-400 uppercase truncate">Operasional & Gaji</p>
+                <p className="text-sm sm:text-base md:text-xl font-black text-slate-800 tracking-tight mt-0.5 truncate" title={formatCurrency(totalToko)}>
+                  {formatCurrency(totalToko)}
+                </p>
+                <p className="text-[9px] sm:text-[10px] text-slate-400 font-medium truncate">Gaji & Lain-lain</p>
               </div>
             </div>
           </div>
