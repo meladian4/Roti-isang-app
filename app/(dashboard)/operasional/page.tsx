@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { formatCurrency, formatNumber, formatDate } from "@/lib/utils"
-import { Plus, Pencil, Trash2, Wallet, CreditCard, Flame, CheckCircle, Package } from "lucide-react"
+import { Plus, Pencil, Trash2, Wallet, CreditCard, Flame, CheckCircle, Package, Sparkles } from "lucide-react"
 
 interface OperationalExpense {
   id: string
@@ -27,6 +27,7 @@ interface OperationalExpense {
 }
 
 const CATEGORIES = [
+  "Pisang & Bahan Segar",
   "Kemasan & Plastik",
   "Bahan Bakar & Energi (Gas/Listrik)",
   "Bahan Penolong & Perlengkapan",
@@ -35,7 +36,7 @@ const CATEGORIES = [
   "Lainnya",
 ]
 
-const UNITS = ["pcs", "pack", "roll", "kg", "liter", "tabung", "bulan", "hari", "kali", "unit"]
+const UNITS = ["sisir", "pcs", "kg", "tandan", "pack", "roll", "liter", "tabung", "bulan", "hari", "kali", "unit", "lainnya"]
 
 export default function OperasionalPage() {
   const { data: session } = useSession()
@@ -47,13 +48,14 @@ export default function OperasionalPage() {
   const [editItem, setEditItem] = useState<OperationalExpense | null>(null)
   const [form, setForm] = useState({
     name: "",
-    category: "Kemasan & Plastik",
+    category: "Pisang & Bahan Segar",
     quantity: "1",
-    unit: "pcs",
+    unit: "sisir",
     amount: "",
     notes: "",
     date: "",
   })
+  const [customUnit, setCustomUnit] = useState("")
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState("")
 
@@ -74,27 +76,30 @@ export default function OperasionalPage() {
     setEditItem(null)
     setForm({
       name: "",
-      category: "Kemasan & Plastik",
+      category: "Pisang & Bahan Segar",
       quantity: "1",
-      unit: "pcs",
+      unit: "sisir",
       amount: "",
       notes: "",
       date: "",
     })
+    setCustomUnit("")
     setOpenModal(true)
   }
 
   const openEdit = (item: OperationalExpense) => {
     setEditItem(item)
+    const isStandardUnit = item.unit ? UNITS.filter(u => u !== "lainnya").includes(item.unit) : false
     setForm({
       name: item.name,
       category: item.category,
       quantity: item.quantity.toString(),
-      unit: item.unit || "pcs",
+      unit: isStandardUnit ? (item.unit || "sisir") : (item.unit ? "lainnya" : "sisir"),
       amount: item.amount.toString(),
       notes: item.notes || "",
       date: item.date ? new Date(item.date).toISOString().split("T")[0] : "",
     })
+    setCustomUnit(!isStandardUnit && item.unit ? item.unit : "")
     setOpenModal(true)
   }
 
@@ -102,19 +107,26 @@ export default function OperasionalPage() {
     e.preventDefault()
     setSaving(true)
 
+    const finalUnit = form.unit === "lainnya" ? (customUnit.trim() || "lainnya") : form.unit
+
+    const payload = {
+      ...form,
+      unit: finalUnit,
+    }
+
     let res: Response
     if (editItem) {
       res = await fetch(`/api/operasional/${editItem.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       })
     } else {
       res = await fetch("/api/operasional", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...form,
+          ...payload,
           userId: (session?.user as { id?: string })?.id,
         }),
       })
@@ -130,7 +142,8 @@ export default function OperasionalPage() {
     setMsg(editItem ? "Beban operasional berhasil diupdate!" : `Catatan pengeluaran operasional berhasil disimpan: ${formatCurrency(data.amount)}`)
     setOpenModal(false)
     setEditItem(null)
-    setForm({ name: "", category: "Kemasan & Plastik", quantity: "1", unit: "pcs", amount: "", notes: "", date: "" })
+    setForm({ name: "", category: "Pisang & Bahan Segar", quantity: "1", unit: "sisir", amount: "", notes: "", date: "" })
+    setCustomUnit("")
     setSaving(false)
     fetchExpenses()
     setTimeout(() => setMsg(""), 5000)
@@ -150,13 +163,13 @@ export default function OperasionalPage() {
 
   // Calculations
   const totalBebanOperasional = expenses.reduce((sum, e) => sum + e.amount, 0)
+  const totalPisang = expenses.filter(e => e.category.includes("Pisang") || e.name.toLowerCase().includes("pisang")).reduce((sum, e) => sum + e.amount, 0)
   const totalKemasan = expenses.filter(e => e.category.includes("Kemasan")).reduce((sum, e) => sum + e.amount, 0)
-  const totalEnergi = expenses.filter(e => e.category.includes("Bahan Bakar") || e.category.includes("Gas")).reduce((sum, e) => sum + e.amount, 0)
-  const totalToko = expenses.filter(e => e.category.includes("Toko") || e.category.includes("Gaji") || e.category.includes("Operasional")).reduce((sum, e) => sum + e.amount, 0)
+  const totalEnergiToko = expenses.filter(e => !e.category.includes("Pisang") && !e.name.toLowerCase().includes("pisang") && !e.category.includes("Kemasan")).reduce((sum, e) => sum + e.amount, 0)
 
   return (
     <div className="min-h-screen">
-      <Header title="Beban Operasional Toko & Pabrik" description="Pencatatan manual pembelanjaan operasional (plastik, gas, minyak, dll) & total akumulasi beban" />
+      <Header title="Beban Operasional Toko & Pabrik" description="Pencatatan manual pembelanjaan operasional (pisang, kemasan plastik, gas, minyak, dll) & total akumulasi beban" />
       <div className="p-8 max-w-7xl mx-auto space-y-6">
 
         {msg && (
@@ -183,6 +196,21 @@ export default function OperasionalPage() {
             </div>
           </div>
 
+          <div className="glass-card rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-5 relative overflow-hidden group border-amber-200/50">
+            <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4">
+              <div className="p-2 sm:p-3 md:p-3.5 rounded-xl sm:rounded-2xl bg-gradient-to-br from-yellow-400 to-amber-500 text-white shadow-lg shadow-amber-400/25 flex-shrink-0">
+                <span className="text-base sm:text-xl">🍌</span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] sm:text-xs font-bold tracking-wider text-amber-800 uppercase truncate">Pisang & Bahan Segar</p>
+                <p className="text-sm sm:text-base md:text-xl font-black text-amber-700 tracking-tight mt-0.5 truncate" title={formatCurrency(totalPisang)}>
+                  {formatCurrency(totalPisang)}
+                </p>
+                <p className="text-[9px] sm:text-[10px] text-amber-600/80 font-medium truncate">Isian & Bahan Utama</p>
+              </div>
+            </div>
+          </div>
+
           <div className="glass-card rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-5 relative overflow-hidden group">
             <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4">
               <div className="p-2 sm:p-3 md:p-3.5 rounded-xl sm:rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-600 text-white shadow-lg shadow-teal-500/25 flex-shrink-0">
@@ -200,30 +228,15 @@ export default function OperasionalPage() {
 
           <div className="glass-card rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-5 relative overflow-hidden group">
             <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4">
-              <div className="p-2 sm:p-3 md:p-3.5 rounded-xl sm:rounded-2xl bg-gradient-to-br from-rose-500 to-red-600 text-white shadow-lg shadow-rose-500/25 flex-shrink-0">
+              <div className="p-2 sm:p-3 md:p-3.5 rounded-xl sm:rounded-2xl bg-gradient-to-br from-rose-500 to-purple-600 text-white shadow-lg shadow-purple-500/25 flex-shrink-0">
                 <Flame className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] sm:text-xs font-bold tracking-wider text-slate-400 uppercase truncate">Gas & Energi</p>
-                <p className="text-sm sm:text-base md:text-xl font-black text-rose-600 tracking-tight mt-0.5 truncate" title={formatCurrency(totalEnergi)}>
-                  {formatCurrency(totalEnergi)}
+                <p className="text-[10px] sm:text-xs font-bold tracking-wider text-slate-400 uppercase truncate">Gas & Operasional Toko</p>
+                <p className="text-sm sm:text-base md:text-xl font-black text-rose-600 tracking-tight mt-0.5 truncate" title={formatCurrency(totalEnergiToko)}>
+                  {formatCurrency(totalEnergiToko)}
                 </p>
-                <p className="text-[9px] sm:text-[10px] text-slate-400 font-medium truncate">Bahan Bakar Oven</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="glass-card rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-5 relative overflow-hidden group">
-            <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4">
-              <div className="p-2 sm:p-3 md:p-3.5 rounded-xl sm:rounded-2xl bg-gradient-to-br from-purple-500 to-violet-600 text-white shadow-lg shadow-purple-500/25 flex-shrink-0">
-                <CreditCard className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[10px] sm:text-xs font-bold tracking-wider text-slate-400 uppercase truncate">Operasional & Gaji</p>
-                <p className="text-sm sm:text-base md:text-xl font-black text-slate-800 tracking-tight mt-0.5 truncate" title={formatCurrency(totalToko)}>
-                  {formatCurrency(totalToko)}
-                </p>
-                <p className="text-[9px] sm:text-[10px] text-slate-400 font-medium truncate">Gaji & Lain-lain</p>
+                <p className="text-[9px] sm:text-[10px] text-slate-400 font-medium truncate">Oven, Listrik & Gaji</p>
               </div>
             </div>
           </div>
@@ -250,10 +263,49 @@ export default function OperasionalPage() {
                 </DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+                {/* Pilihan Cepat Template */}
+                <div className="bg-amber-50/70 p-2.5 rounded-2xl border border-amber-200/60 space-y-1.5">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-800 flex items-center gap-1">
+                    <Sparkles className="h-3 w-3 text-amber-600" /> Pilihan Cepat / Template:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setForm({ ...form, name: "Pisang", category: "Pisang & Bahan Segar", unit: "sisir" })
+                        setCustomUnit("")
+                      }}
+                      className="px-2.5 py-1 rounded-xl text-xs font-bold bg-amber-200 text-amber-900 hover:bg-amber-300 transition-all active:scale-95 flex items-center gap-1 shadow-xs border border-amber-300"
+                    >
+                      🍌 Pisang (sisir)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setForm({ ...form, name: "Plastik Roti", category: "Kemasan & Plastik", unit: "pack" })
+                        setCustomUnit("")
+                      }}
+                      className="px-2.5 py-1 rounded-xl text-xs font-bold bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 transition-all active:scale-95 flex items-center gap-1"
+                    >
+                      📦 Kemasan Plastik
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setForm({ ...form, name: "Gas LPG", category: "Bahan Bakar & Energi (Gas/Listrik)", unit: "tabung" })
+                        setCustomUnit("")
+                      }}
+                      className="px-2.5 py-1 rounded-xl text-xs font-bold bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 transition-all active:scale-95 flex items-center gap-1"
+                    >
+                      🔥 Gas LPG
+                    </button>
+                  </div>
+                </div>
+
                 <div className="space-y-1.5">
                   <Label className="font-bold text-slate-700">Nama Barang / Pengeluaran</Label>
                   <Input
-                    placeholder="Contoh: Plastik Roti 15x20, Gas LPG 12kg, Listrik Toko..."
+                    placeholder="Contoh: Pisang Raja, Plastik Kemasan Roti, Gas LPG 12kg..."
                     value={form.name}
                     onChange={e => setForm({ ...form, name: e.target.value })}
                     required
@@ -286,14 +338,52 @@ export default function OperasionalPage() {
                   </div>
                   <div className="space-y-1.5">
                     <Label className="font-bold text-slate-700">Satuan</Label>
-                    <Select value={form.unit} onValueChange={v => setForm({ ...form, unit: v })}>
-                      <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                    <Select value={form.unit} onValueChange={v => { setForm({ ...form, unit: v }); if (v !== "lainnya") setCustomUnit(""); }}>
+                      <SelectTrigger className="rounded-xl font-bold text-amber-950 bg-amber-50/50 border-amber-300"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                        {UNITS.map(u => <SelectItem key={u} value={u}>{u === "sisir" ? "🍌 sisir" : u}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
+
+                {/* Quick Unit Selector Pills */}
+                <div className="space-y-1 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Pilih Cepat Satuan:</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {["sisir", "pcs", "kg", "tandan", "pack", "tabung", "lainnya"].map((u) => (
+                      <button
+                        key={u}
+                        type="button"
+                        onClick={() => {
+                          setForm({ ...form, unit: u })
+                          if (u !== "lainnya") setCustomUnit("")
+                        }}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                          form.unit === u
+                            ? "bg-amber-600 text-white shadow-xs scale-105"
+                            : "bg-white text-slate-700 hover:bg-slate-200 border border-slate-200"
+                        }`}
+                      >
+                        {u === "sisir" ? "🍌 sisir" : u}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Custom unit input when 'lainnya' is selected */}
+                {(form.unit === "lainnya" || (!UNITS.includes(form.unit) && form.unit)) && (
+                  <div className="space-y-1.5 bg-amber-50/80 p-3 rounded-xl border border-amber-300">
+                    <Label className="font-bold text-amber-900 text-xs">Ketik Satuan Lainnya / Kustom</Label>
+                    <Input
+                      placeholder="Contoh: ikat, dus, keranjang, karung..."
+                      value={customUnit}
+                      onChange={e => setCustomUnit(e.target.value)}
+                      required
+                      className="rounded-xl bg-white border-amber-300"
+                    />
+                  </div>
+                )}
 
                 <div className="space-y-1.5">
                   <Label className="font-bold text-slate-700">Total Biaya Pengeluaran (Rp)</Label>
@@ -321,7 +411,7 @@ export default function OperasionalPage() {
                 <div className="space-y-1.5">
                   <Label className="font-bold text-slate-700">Catatan / Detail Pembelian</Label>
                   <Textarea
-                    placeholder="Contoh: Beli di Toko Plastik Jaya, Bon #102..."
+                    placeholder="Contoh: Beli di Pasar Johar, Pisang Kepok Matang..."
                     value={form.notes}
                     onChange={e => setForm({ ...form, notes: e.target.value })}
                     rows={2}
@@ -369,12 +459,19 @@ export default function OperasionalPage() {
                         <td className="py-4 px-6 text-slate-500 font-medium">{formatDate(e.date)}</td>
                         <td className="py-4 px-6 font-bold text-slate-800">{e.name}</td>
                         <td className="py-4 px-6">
-                          <Badge variant="secondary" className="bg-amber-100 text-amber-950 font-bold text-[10px]">
-                            {e.category}
+                          <Badge
+                            variant="secondary"
+                            className={`font-bold text-[10px] ${
+                              e.category.includes("Pisang")
+                                ? "bg-amber-100 text-amber-900 border border-amber-300"
+                                : "bg-slate-100 text-slate-800"
+                            }`}
+                          >
+                            {e.category.includes("Pisang") ? "🍌 " : ""}{e.category}
                           </Badge>
                         </td>
                         <td className="py-4 px-6 text-right font-bold text-slate-700">
-                          {formatNumber(e.quantity)} {e.unit || "pcs"}
+                          {formatNumber(e.quantity)} {e.unit === "sisir" ? "sisir" : (e.unit || "pcs")}
                         </td>
                         <td className="py-4 px-6 text-right font-extrabold text-amber-700">{formatCurrency(e.amount)}</td>
                         <td className="py-4 px-6 text-xs text-slate-400">{e.notes || "-"}</td>

@@ -1465,10 +1465,6 @@ export default function PenjualanPage() {
                       <span className="text-slate-500 font-medium">Roti Terjual Bersih:</span>
                       <span className="font-bold text-slate-800">{formatNumber(af.pcsSold)} pcs</span>
                     </div>
-                    <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-100">
-                      <span className="text-slate-500 font-medium">Estimasi HPP Roti Terjual:</span>
-                      <span className="font-semibold text-slate-700">{formatCurrency(af.totalHppSold)}</span>
-                    </div>
                     {/* Bonus Count per Agent */}
                     <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-100 bg-purple-50 p-2 rounded-lg">
                       <span className="text-purple-800 font-bold flex items-center gap-1">
