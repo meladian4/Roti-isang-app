@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { useSession } from "next-auth/react"
 import { Header } from "@/components/layout/header"
 import { Button } from "@/components/ui/button"
@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { MonthFilter, isDateInMonth } from "@/components/ui/month-filter"
 import { formatCurrency, formatNumber, formatDate } from "@/lib/utils"
 import { Plus, Pencil, Trash2, Wallet, CreditCard, Flame, CheckCircle, Package, Sparkles } from "lucide-react"
 
@@ -42,6 +43,20 @@ export default function OperasionalPage() {
   const { data: session } = useSession()
   const [expenses, setExpenses] = useState<OperationalExpense[]>([])
   const [loading, setLoading] = useState(true)
+
+  // Period / Month Filter State (Default: Bulan Berjalan)
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => {
+    return new Date().toISOString().slice(0, 7)
+  })
+
+  // Filtered expenses based on selected month
+  const filteredExpenses = useMemo(() => {
+    return expenses.filter(e => isDateInMonth(e.date, selectedMonth))
+  }, [expenses, selectedMonth])
+
+  const allExpenseDates = useMemo(() => {
+    return expenses.map(e => e.date)
+  }, [expenses])
 
   // Modal State
   const [openModal, setOpenModal] = useState(false)
@@ -161,11 +176,11 @@ export default function OperasionalPage() {
     setTimeout(() => setMsg(""), 5000)
   }
 
-  // Calculations
-  const totalBebanOperasional = expenses.reduce((sum, e) => sum + e.amount, 0)
-  const totalPisang = expenses.filter(e => e.category.includes("Pisang") || e.name.toLowerCase().includes("pisang")).reduce((sum, e) => sum + e.amount, 0)
-  const totalKemasan = expenses.filter(e => e.category.includes("Kemasan")).reduce((sum, e) => sum + e.amount, 0)
-  const totalEnergiToko = expenses.filter(e => !e.category.includes("Pisang") && !e.name.toLowerCase().includes("pisang") && !e.category.includes("Kemasan")).reduce((sum, e) => sum + e.amount, 0)
+  // Calculations (for selected month)
+  const totalBebanOperasional = filteredExpenses.reduce((sum, e) => sum + e.amount, 0)
+  const totalPisang = filteredExpenses.filter(e => e.category.includes("Pisang") || e.name.toLowerCase().includes("pisang")).reduce((sum, e) => sum + e.amount, 0)
+  const totalKemasan = filteredExpenses.filter(e => e.category.includes("Kemasan")).reduce((sum, e) => sum + e.amount, 0)
+  const totalEnergiToko = filteredExpenses.filter(e => !e.category.includes("Pisang") && !e.name.toLowerCase().includes("pisang") && !e.category.includes("Kemasan")).reduce((sum, e) => sum + e.amount, 0)
 
   return (
     <div className="min-h-screen">
@@ -178,6 +193,15 @@ export default function OperasionalPage() {
             <p className="text-sm font-bold">{msg}</p>
           </div>
         )}
+
+        {/* Filter Periode Bulan */}
+        <MonthFilter
+          selectedMonth={selectedMonth}
+          onChangeMonth={setSelectedMonth}
+          totalCount={filteredExpenses.length}
+          labelSuffix="Pengeluaran"
+          existingDates={allExpenseDates}
+        />
 
         {/* Financial Summary Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 md:gap-5">
@@ -246,7 +270,7 @@ export default function OperasionalPage() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
           <div>
             <h3 className="font-bold text-slate-800 text-base">Daftar Pengeluaran Operasional</h3>
-            <p className="text-xs text-slate-400">{expenses.length} catatan pembelanjaan terdaftar</p>
+            <p className="text-xs text-slate-400">{filteredExpenses.length} catatan pembelanjaan terdaftar</p>
           </div>
 
           <Dialog open={openModal} onOpenChange={(o) => { setOpenModal(o); if (!o) setEditItem(null); }}>
@@ -437,8 +461,8 @@ export default function OperasionalPage() {
           <CardContent className="p-0">
             {loading ? (
               <div className="text-center py-12 text-slate-400">Memuat data pengeluaran operasional...</div>
-            ) : expenses.length === 0 ? (
-              <div className="text-center py-12 text-slate-400">Belum ada catatan pengeluaran operasional terdaftar</div>
+            ) : filteredExpenses.length === 0 ? (
+              <div className="text-center py-12 text-slate-400">Belum ada catatan pengeluaran operasional pada periode ini</div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -454,7 +478,7 @@ export default function OperasionalPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {expenses.map(e => (
+                    {filteredExpenses.map(e => (
                       <tr key={e.id} className="hover:bg-amber-50/40 transition-colors">
                         <td className="py-4 px-6 text-slate-500 font-medium">{formatDate(e.date)}</td>
                         <td className="py-4 px-6 font-bold text-slate-800">{e.name}</td>

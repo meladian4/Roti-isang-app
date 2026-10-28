@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { useSession } from "next-auth/react"
 import { Header } from "@/components/layout/header"
 import { Button } from "@/components/ui/button"
@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { formatCurrency, formatNumber, formatDate } from "@/lib/utils"
 import { Plus, Pencil, Trash2, Factory, CheckCircle, XCircle, Calculator, ChefHat, Scale, PieChart, Layers, Eye, ReceiptText } from "lucide-react"
+import { MonthFilter, isDateInMonth } from "@/components/ui/month-filter"
 
 interface Ingredient { id: string; name: string; unit: string; currentStock: number; pricePerUnit: number }
 interface RecipeIngredient { ingredientId: string; quantity: number; ingredient: Ingredient }
@@ -39,6 +40,29 @@ export default function ProduksiPage() {
   const [recipes, setRecipes] = useState<Recipe[]>([])
   const [productions, setProductions] = useState<Production[]>([])
   const [loading, setLoading] = useState(true)
+
+  // Period / Month Filter State (Default: Bulan Berjalan)
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => {
+    return new Date().toISOString().slice(0, 7)
+  })
+
+  // Filtered productions based on selected month
+  const filteredProductions = useMemo(() => {
+    return productions.filter(p => isDateInMonth(p.date, selectedMonth))
+  }, [productions, selectedMonth])
+
+  const allProductionDates = useMemo(() => {
+    return productions.map(p => p.date)
+  }, [productions])
+
+  const totalMonthlyPcs = useMemo(() => {
+    return filteredProductions.reduce((sum, p) => sum + (p.batchCount * (p.recipe?.servingsPerBatch || 20)), 0)
+  }, [filteredProductions])
+
+  const totalMonthlyHpp = useMemo(() => {
+    return filteredProductions.reduce((sum, p) => sum + p.totalCost, 0)
+  }, [filteredProductions])
+
   const [openDialog, setOpenDialog] = useState(false)
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null)
   
@@ -270,7 +294,7 @@ export default function ProduksiPage() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/60 backdrop-blur-md p-4 rounded-2xl border border-emerald-500/10 shadow-xs">
           <div>
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Sesi Produksi</span>
-            <p className="text-base font-extrabold text-slate-800">{productions.length} Sesi Produksi Terdaftar</p>
+            <p className="text-base font-extrabold text-slate-800">{filteredProductions.length} Sesi ({formatNumber(totalMonthlyPcs)} Pcs Roti) • {formatCurrency(totalMonthlyHpp)}</p>
           </div>
           <Button onClick={() => setOpenDialog(true)} className="shadow-lg shadow-emerald-500/25">
             <ChefHat className="h-4 w-4" /> Hitung & Catat Produksi (Pcs Roti)
@@ -525,6 +549,15 @@ export default function ProduksiPage() {
           </DialogContent>
         </Dialog>
 
+        {/* Filter Periode Bulan */}
+        <MonthFilter
+          selectedMonth={selectedMonth}
+          onChangeMonth={setSelectedMonth}
+          totalCount={filteredProductions.length}
+          labelSuffix="Sesi Produksi"
+          existingDates={allProductionDates}
+        />
+
         {/* History Table Card */}
         <Card className="overflow-hidden">
           <CardHeader className="bg-gradient-to-r from-emerald-50/90 to-teal-50/60 border-b border-emerald-100 py-5">
@@ -541,10 +574,10 @@ export default function ProduksiPage() {
                 <Factory className="h-10 w-10 mx-auto mb-2 opacity-30 animate-bounce" />
                 <p className="text-xs font-medium">Memuat data produksi...</p>
               </div>
-            ) : productions.length === 0 ? (
+            ) : filteredProductions.length === 0 ? (
               <div className="text-center py-12 text-slate-400">
                 <Factory className="h-12 w-12 mx-auto mb-2 opacity-20" />
-                <p className="font-bold text-sm text-slate-700">Belum Ada Sesi Produksi</p>
+                <p className="font-bold text-sm text-slate-700">Belum Ada Sesi Produksi Pada Periode Ini</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -560,7 +593,7 @@ export default function ProduksiPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {productions.map(p => {
+                    {filteredProductions.map(p => {
                       const servings = p.recipe?.servingsPerBatch || 20
                       const pcsProduced = p.batchCount * servings
                       return (

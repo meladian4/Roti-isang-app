@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { useSession } from "next-auth/react"
 import { Header } from "@/components/layout/header"
 import { Button } from "@/components/ui/button"
@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { MonthFilter, isDateInMonth } from "@/components/ui/month-filter"
 import { formatCurrency, formatNumber, formatDate } from "@/lib/utils"
 import {
   Plus,
@@ -123,6 +124,24 @@ export default function PenjualanPage() {
   const [returns, setReturns] = useState<SaleReturn[]>([])
   const [loading, setLoading] = useState(true)
 
+  // Period / Month Filter State (Default: Bulan Berjalan)
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => {
+    return new Date().toISOString().slice(0, 7)
+  })
+
+  // Filtered Datasets based on selected month
+  const filteredSales = useMemo(() => {
+    return sales.filter(s => isDateInMonth(s.date, selectedMonth))
+  }, [sales, selectedMonth])
+
+  const filteredReturns = useMemo(() => {
+    return returns.filter(r => isDateInMonth(r.date, selectedMonth))
+  }, [returns, selectedMonth])
+
+  const allTransactionDates = useMemo(() => {
+    return [...sales.map(s => s.date), ...returns.map(r => r.date)]
+  }, [sales, returns])
+
   // Top level active tab: "penjualan" | "retur" | "rekap-agent"
   const [activeTab, setActiveTab] = useState<"penjualan" | "retur" | "rekap-agent">("penjualan")
 
@@ -213,14 +232,14 @@ export default function PenjualanPage() {
   }
   const isRegularReturn = (r: SaleReturn) => !isBonus(r) && !isFree(r)
 
-  // Segmented Return Datasets
-  const regularReturns = returns.filter(isRegularReturn)
-  const freeReturns = returns.filter(isFree)
-  const bonusReturns = returns.filter(isBonus)
+  // Segmented Return Datasets (filtered by selected month)
+  const regularReturns = filteredReturns.filter(isRegularReturn)
+  const freeReturns = filteredReturns.filter(isFree)
+  const bonusReturns = filteredReturns.filter(isBonus)
 
-  // Financial Summary Totals
-  const totalOmsetKotor = sales.reduce((sum, s) => sum + s.totalAmount, 0)
-  const totalPcsSold = sales.reduce((sum, s) => sum + s.quantity, 0)
+  // Financial Summary Totals (for selected month)
+  const totalOmsetKotor = filteredSales.reduce((sum, s) => sum + s.totalAmount, 0)
+  const totalPcsSold = filteredSales.reduce((sum, s) => sum + s.quantity, 0)
   const totalReturnLoss = regularReturns.reduce((sum, r) => sum + r.lossAmount, 0)
   const totalFreeLoss = freeReturns.reduce((sum, r) => sum + r.lossAmount, 0)
   const totalBonusLoss = bonusReturns.reduce((sum, r) => sum + r.lossAmount, 0)
@@ -253,8 +272,8 @@ export default function PenjualanPage() {
 
   // Marketing Agent Financial Breakdown Calculation
   const agentFinancials = marketingAgents.map(agent => {
-    const agentSales = sales.filter(s => s.agentId === agent.id)
-    const agentAllReturns = returns.filter(r => r.agentId === agent.id)
+    const agentSales = filteredSales.filter(s => s.agentId === agent.id)
+    const agentAllReturns = filteredReturns.filter(r => r.agentId === agent.id)
     const agentRegularReturns = agentAllReturns.filter(isRegularReturn)
     const agentBonuses = agentAllReturns.filter(isBonus)
 
@@ -675,6 +694,15 @@ export default function PenjualanPage() {
           </div>
         </div>
 
+        {/* Filter Periode Bulan (Default: Bulan Berjalan) */}
+        <MonthFilter
+          selectedMonth={selectedMonth}
+          onChangeMonth={setSelectedMonth}
+          totalCount={filteredSales.length}
+          labelSuffix="Penjualan"
+          existingDates={allTransactionDates}
+        />
+
         {/* Financial Summary Metric Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-4 md:gap-5">
           <div className="glass-card rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-5 relative overflow-hidden group">
@@ -747,7 +775,7 @@ export default function PenjualanPage() {
                 activeTab === "penjualan" ? "bg-white text-emerald-700 shadow-sm" : "text-slate-500 hover:text-slate-800"
               }`}
             >
-              <ShoppingBag className="h-4 w-4" /> Penjualan ({sales.length})
+              <ShoppingBag className="h-4 w-4" /> Penjualan ({filteredSales.length})
             </button>
             <button
               onClick={() => setActiveTab("retur")}
@@ -755,7 +783,7 @@ export default function PenjualanPage() {
                 activeTab === "retur" ? "bg-white text-rose-600 shadow-sm" : "text-slate-500 hover:text-slate-800"
               }`}
             >
-              <RotateCcw className="h-4 w-4" /> Menu Retur, Free & Bonus ({returns.length})
+              <RotateCcw className="h-4 w-4" /> Menu Retur, Free & Bonus ({filteredReturns.length})
             </button>
             <button
               onClick={() => setActiveTab("rekap-agent")}
@@ -797,8 +825,8 @@ export default function PenjualanPage() {
             <CardContent className="p-0">
               {loading ? (
                 <div className="text-center py-12 text-slate-400">Memuat data penjualan...</div>
-              ) : sales.length === 0 ? (
-                <div className="text-center py-12 text-slate-400">Belum ada transaksi penjualan terdaftar</div>
+              ) : filteredSales.length === 0 ? (
+                <div className="text-center py-12 text-slate-400">Belum ada transaksi penjualan pada periode ini</div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -815,7 +843,7 @@ export default function PenjualanPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {sales.map(s => (
+                      {filteredSales.map(s => (
                         <tr key={s.id} className="hover:bg-emerald-50/40 transition-colors">
                           <td className="py-4 px-4 sm:px-6 text-slate-500 font-medium whitespace-nowrap">{formatDate(s.date)}</td>
                           <td className="py-4 px-4 sm:px-6">
@@ -1346,14 +1374,14 @@ export default function PenjualanPage() {
                 <Card className="overflow-hidden border-slate-200">
                   <CardHeader className="bg-slate-50 border-b border-slate-100 py-4">
                     <CardTitle className="text-base font-bold flex items-center gap-2 text-slate-800">
-                      <RotateCcw className="h-5 w-5 text-slate-600" /> Riwayat Semua Retur, Free, & Bonus ({returns.length})
+                      <RotateCcw className="h-5 w-5 text-slate-600" /> Riwayat Semua Retur, Free, & Bonus ({filteredReturns.length})
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
                     {loading ? (
                       <div className="text-center py-12 text-slate-400">Memuat data...</div>
-                    ) : returns.length === 0 ? (
-                      <div className="text-center py-12 text-slate-400">Belum ada catatan retur, free, atau bonus</div>
+                    ) : filteredReturns.length === 0 ? (
+                      <div className="text-center py-12 text-slate-400">Belum ada catatan retur, free, atau bonus pada periode ini</div>
                     ) : (
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm">
@@ -1371,7 +1399,7 @@ export default function PenjualanPage() {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100">
-                            {returns.map(r => {
+                            {filteredReturns.map(r => {
                               const b = isBonus(r)
                               const f = isFree(r)
                               return (

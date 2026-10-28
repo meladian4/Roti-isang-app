@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { formatCurrency, formatDate } from "@/lib/utils"
 import { Package, Factory, TrendingUp, AlertTriangle, Wheat, Sparkles, ArrowRight, Activity, DollarSign, ShoppingBag, RotateCcw, Wallet } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 
 interface DashboardData {
   summary: {
@@ -39,12 +40,15 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen bg-slate-50/50">
-        <div className="text-center p-8 glass-panel rounded-3xl glow-green">
-          <div className="relative inline-block">
-            <Wheat className="h-14 w-14 text-emerald-600 animate-bounce mx-auto mb-4" />
-            <div className="absolute inset-0 rounded-full blur-xl bg-emerald-500/30 animate-pulse"></div>
+        <div className="text-center p-8 glass-panel rounded-3xl glow-green border border-emerald-500/20 shadow-xl max-w-xs w-full">
+          <div className="relative inline-block mb-3">
+            <div className="h-16 w-16 rounded-2xl overflow-hidden border-2 border-emerald-500/30 shadow-md mx-auto relative animate-pulse">
+              <Image src="/logo-ropisku.jpg" alt="Logo Roti Isang" fill className="object-cover" sizes="64px" />
+            </div>
+            <div className="absolute inset-0 rounded-2xl blur-xl bg-emerald-500/20 -z-10"></div>
           </div>
-          <p className="text-slate-600 font-bold tracking-wide">Memuat Dashboard Antigravity...</p>
+          <p className="text-slate-800 font-black text-sm tracking-wide">Memuat Dashboard Roti Isang...</p>
+          <p className="text-[11px] text-slate-400 font-medium mt-1">Sinkronisasi data produksi & keuangan...</p>
         </div>
       </div>
     )
