@@ -325,8 +325,8 @@ export default function PenjualanPage() {
     const bonusPcs = agentBonuses.reduce((sum, r) => sum + r.quantity, 0)
     const bonusHpp = agentBonuses.reduce((sum, r) => sum + r.lossAmount, 0)
 
-    // Laba Bersih Agent = Penjualan Bersih - HPP Bahan Terjual - Bonus HPP
-    const labaBersih = penjualanBersih - totalHppSold - bonusHpp
+    // Laba Bersih Agent = Penjualan Bersih - Total HPP Roti (Bonus murni pencatatan, TIDAK memotong penjualan/laba agen)
+    const labaBersih = penjualanBersih - totalHppSold
 
     return {
       agent,
@@ -792,11 +792,11 @@ export default function PenjualanPage() {
                 <Award className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] sm:text-xs font-bold tracking-wider text-slate-400 uppercase truncate">Bonus Agent</p>
+                <p className="text-[10px] sm:text-xs font-bold tracking-wider text-slate-400 uppercase truncate">Catatan Bonus</p>
                 <p className="text-sm sm:text-base md:text-xl font-black text-purple-700 tracking-tight mt-0.5 truncate" title={`${formatNumber(totalPcsBonus)} pcs`}>
                   {formatNumber(totalPcsBonus)} pcs
                 </p>
-                <p className="text-[9px] sm:text-[10px] text-purple-600 font-medium truncate">{formatCurrency(totalBonusLoss)}</p>
+                <p className="text-[9px] sm:text-[10px] text-purple-600 font-medium truncate">Pencatatan Saja</p>
               </div>
             </div>
           </div>
@@ -1529,15 +1529,26 @@ export default function PenjualanPage() {
                       <span className="text-slate-500 font-medium">Roti Terjual Bersih:</span>
                       <span className="font-bold text-slate-800">{formatNumber(af.pcsSold)} pcs</span>
                     </div>
-                    {/* Bonus Count per Agent */}
-                    <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-100 bg-purple-50 p-2 rounded-lg">
-                      <span className="text-purple-800 font-bold flex items-center gap-1">
-                        <Award className="h-3.5 w-3.5 text-purple-600" /> Bonus Diberikan:
-                      </span>
-                      <span className="font-black text-purple-900">{formatNumber(af.bonusPcs)} pcs ({formatCurrency(af.bonusHpp)})</span>
+                    <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-100 text-slate-600">
+                      <span className="font-medium">• Modal Bahan Baku (HPP):</span>
+                      <span className="font-bold text-slate-700">-{formatCurrency(af.totalHppSold)}</span>
                     </div>
+                    {/* Bonus Count per Agent: Hanya info pencatatan, TIDAK memotong penjualan/laba agen */}
+                    {af.bonusPcs > 0 && (
+                      <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-100 bg-purple-50/70 p-2 rounded-lg">
+                        <span className="text-purple-800 font-bold flex items-center gap-1">
+                          <Award className="h-3.5 w-3.5 text-purple-600" /> Catatan Bonus:
+                        </span>
+                        <span className="font-black text-purple-900">
+                          {formatNumber(af.bonusPcs)} pcs <span className="text-[10px] text-purple-600 font-normal">(pencatatan saja)</span>
+                        </span>
+                      </div>
+                    )}
                     <div className="pt-2 flex justify-between items-center text-sm bg-emerald-50 p-3 rounded-xl border border-emerald-200/60">
-                      <span className="font-extrabold text-slate-700">Laba Bersih Agent:</span>
+                      <div>
+                        <span className="font-extrabold text-slate-700 block">Laba Bersih Agent:</span>
+                        <span className="text-[10px] text-slate-400 font-normal">Penjualan Bersih - Modal HPP</span>
+                      </div>
                       <span className={`font-black text-base ${af.labaBersih >= 0 ? "text-emerald-700" : "text-rose-600"}`}>
                         {formatCurrency(af.labaBersih)}
                       </span>
@@ -1568,7 +1579,8 @@ export default function PenjualanPage() {
                         <th className="text-right py-3.5 px-6">Bersih (Pcs)</th>
                         <th className="text-right py-3.5 px-6">Penjualan Bersih</th>
                         <th className="text-right py-3.5 px-6">Potongan Retur</th>
-                        <th className="text-right py-3.5 px-6">Bonus (Pcs)</th>
+                        <th className="text-right py-3.5 px-6">Modal HPP Roti</th>
+                        <th className="text-right py-3.5 px-6">Catatan Bonus</th>
                         <th className="text-right py-3.5 px-6">Laba Bersih Agent</th>
                         <th className="text-center py-3.5 px-6">Aksi</th>
                       </tr>
@@ -1582,7 +1594,8 @@ export default function PenjualanPage() {
                           <td className="py-4 px-6 text-right font-bold text-slate-700">{formatNumber(af.pcsSold)} pcs</td>
                           <td className="py-4 px-6 text-right font-extrabold text-emerald-600">{formatCurrency(af.omset)}</td>
                           <td className="py-4 px-6 text-right font-bold text-rose-600">-{formatCurrency(af.potonganRetur)}</td>
-                          <td className="py-4 px-6 text-right font-black text-purple-700">+{formatNumber(af.bonusPcs)} pcs</td>
+                          <td className="py-4 px-6 text-right font-medium text-slate-600">-{formatCurrency(af.totalHppSold)}</td>
+                          <td className="py-4 px-6 text-right font-semibold text-purple-700">{af.bonusPcs > 0 ? `+${formatNumber(af.bonusPcs)} pcs` : "-"}</td>
                           <td className={`py-4 px-6 text-right font-black text-base ${af.labaBersih >= 0 ? "text-emerald-700" : "text-rose-600"}`}>
                             {formatCurrency(af.labaBersih)}
                           </td>
@@ -1959,7 +1972,7 @@ export default function PenjualanPage() {
                   </Select>
                   {returnForm.category === "BONUS" && (
                     <p className="text-[10px] text-purple-600 font-medium">
-                      ⭐ Bonus akan otomatis masuk dan dicatat khusus ke saldo agen yang dipilih.
+                      ⭐ Bonus ini hanya dicatat sebagai riwayat roti untuk agen (TIDAK memotong penjualan maupun laba bersih agen).
                     </p>
                   )}
                 </div>
@@ -2187,7 +2200,9 @@ export default function PenjualanPage() {
                       </span>
                     </div>
                     <p className="text-[11px] text-slate-600 pt-1.5 border-t border-slate-200/60 font-medium">
-                      💡 Nilai modal HPP bahan baku ini dicatat sebagai beban promosi / insentif perusahaan.
+                      {returnForm.category === "BONUS"
+                        ? "💡 Bonus roti ini hanya sebagai pencatatan riwayat (TIDAK memotong penjualan atau laba agen)."
+                        : "💡 Nilai modal HPP bahan baku ini dicatat sebagai beban promosi tester perusahaan."}
                     </p>
                   </>
                 )}
