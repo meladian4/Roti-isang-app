@@ -177,6 +177,7 @@ export default function PenjualanPage() {
     date: "",
   })
   const [estimatedHppPerPcs, setEstimatedHppPerPcs] = useState(0)
+  const [estimatedSellingPrice, setEstimatedSellingPrice] = useState(0)
   const [savingReturn, setSavingReturn] = useState(false)
 
   // Marketing Agent Management Dialog State
@@ -222,6 +223,35 @@ export default function PenjualanPage() {
     )
     const servings = selected.servingsPerBatch > 0 ? selected.servingsPerBatch : 1
     return batchCost / servings
+  }
+
+  // Helper function to find active selling price per pcs for a recipe & agent
+  const getSellingPriceFor = (recipeIdOrName: string, agentId?: string | null) => {
+    if (!recipeIdOrName && !agentId) return 0
+    const trimmed = (recipeIdOrName || "").trim().toLowerCase()
+
+    // 1. Coba cari penjualan agen tersebut untuk resep ini
+    if (agentId) {
+      const agentSale = sales.find(s =>
+        s.agentId === agentId &&
+        (s.recipeId === recipeIdOrName || s.recipeName.toLowerCase() === trimmed)
+      )
+      if (agentSale && agentSale.pricePerUnit) return agentSale.pricePerUnit
+    }
+
+    // 2. Coba cari penjualan agen tersebut secara umum
+    if (agentId) {
+      const anyAgentSale = sales.find(s => s.agentId === agentId)
+      if (anyAgentSale && anyAgentSale.pricePerUnit) return anyAgentSale.pricePerUnit
+    }
+
+    // 3. Coba cari penjualan resep ini secara umum
+    const anySale = sales.find(s =>
+      s.recipeId === recipeIdOrName || s.recipeName.toLowerCase() === trimmed
+    )
+    if (anySale && anySale.pricePerUnit) return anySale.pricePerUnit
+
+    return 0
   }
 
   // Classification Helpers for Returns, Free, and Bonus
@@ -471,6 +501,7 @@ export default function PenjualanPage() {
       date: new Date().toISOString().split("T")[0],
     })
     setEstimatedHppPerPcs(0)
+    setEstimatedSellingPrice(0)
     setOpenReturnModal(true)
   }
 
@@ -478,6 +509,8 @@ export default function PenjualanPage() {
     setEditReturnItem(item)
     const hpp = calculateHppPerPcs(item.recipeId || item.recipeName)
     setEstimatedHppPerPcs(hpp)
+    const sp = getSellingPriceFor(item.recipeId || item.recipeName, item.agentId)
+    setEstimatedSellingPrice(sp)
 
     let cat: "RETUR" | "FREE" | "BONUS" = "RETUR"
     const rLower = (item.reason || "").toLowerCase()
@@ -518,6 +551,7 @@ export default function PenjualanPage() {
 
     const payload = {
       ...returnForm,
+      sellingPrice: estimatedSellingPrice,
       agentId: targetAgentId,
       reason: finalReason,
       userId: (session?.user as { id?: string })?.id,
@@ -546,7 +580,7 @@ export default function PenjualanPage() {
     }
 
     const labelAction = returnForm.category === "BONUS" ? "Bonus Marketing Agent" : returnForm.category === "FREE" ? "Roti Free (Tester)" : "Retur Roti"
-    setMsg(editReturnItem ? `Data ${labelAction} berhasil diupdate!` : `${labelAction} berhasil dicatat! Otomatis Biaya/Kerugian HPP: ${formatCurrency(data.lossAmount)}`)
+    setMsg(editReturnItem ? `Data ${labelAction} berhasil diupdate!` : `${labelAction} berhasil dicatat! Total Nilai Potongan: ${formatCurrency(data.lossAmount)}`)
     setOpenReturnModal(false)
     setEditReturnItem(null)
     setSavingReturn(false)
@@ -609,6 +643,8 @@ export default function PenjualanPage() {
     const selected = recipes.find(r => r.id === id)
     const hpp = calculateHppPerPcs(id)
     setEstimatedHppPerPcs(hpp)
+    const sp = getSellingPriceFor(id, returnForm.agentId)
+    setEstimatedSellingPrice(sp)
     setReturnForm({
       ...returnForm,
       recipeId: id,
@@ -730,7 +766,7 @@ export default function PenjualanPage() {
                 <p className="text-sm sm:text-base md:text-xl font-black text-rose-600 tracking-tight mt-0.5 truncate" title={`-${formatCurrency(totalReturnLoss)}`}>
                   -{formatCurrency(totalReturnLoss)}
                 </p>
-                <p className="text-[9px] sm:text-[10px] text-rose-500 font-semibold truncate">{formatNumber(totalPcsRegularReturn)} pcs (HPP)</p>
+                <p className="text-[9px] sm:text-[10px] text-rose-500 font-semibold truncate">{formatNumber(totalPcsRegularReturn)} pcs (Harga Jual)</p>
               </div>
             </div>
           </div>
@@ -1261,7 +1297,7 @@ export default function PenjualanPage() {
                   <div>
                     <h4 className="font-extrabold text-rose-950 text-sm">Retur Reguler (Rusak / Expired / Ditolak)</h4>
                     <p className="text-xs text-rose-800 mt-0.5">
-                      Pencatatan roti yang dikembalikan oleh toko konsinyasi atau agen karena kadaluarsa, rusak, bantet, atau cacat kemasan dengan kerugian HPP otomatis.
+                      Pencatatan roti yang dikembalikan oleh toko konsinyasi atau marketing agen karena kadaluarsa, rusak, bantet, atau cacat kemasan (memotong omset berdasarkan harga jual toko).
                     </p>
                   </div>
                 </div>
@@ -1277,9 +1313,9 @@ export default function PenjualanPage() {
                   </Card>
                   <Card className="border-rose-200 bg-white">
                     <CardContent className="p-4">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-rose-700">Total Kerugian HPP Retur</p>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-rose-700">Total Potongan Retur Toko</p>
                       <p className="text-2xl font-black text-rose-600 mt-1">{formatCurrency(totalReturnLoss)}</p>
-                      <p className="text-xs text-slate-400 mt-0.5">Dihitung otomatis dari komposisi bahan baku</p>
+                      <p className="text-xs text-slate-400 mt-0.5">Memotong faktur penjualan sesuai harga jual toko</p>
                     </CardContent>
                   </Card>
                 </div>
@@ -1304,7 +1340,7 @@ export default function PenjualanPage() {
                               <th className="text-left py-3.5 px-4 sm:px-6">Nama Roti</th>
                               <th className="text-right py-3.5 px-4 sm:px-6">Jumlah Retur</th>
                               <th className="text-left py-3.5 px-4 sm:px-6">Alasan</th>
-                              <th className="text-right py-3.5 px-4 sm:px-6">Potongan Penjualan (HPP)</th>
+                              <th className="text-right py-3.5 px-4 sm:px-6">Potongan Penjualan (Harga Jual)</th>
                               <th className="text-left py-3.5 px-4 sm:px-6">Catatan</th>
                               <th className="text-center py-3.5 px-4 sm:px-6">Aksi</th>
                             </tr>
@@ -1819,7 +1855,7 @@ export default function PenjualanPage() {
                 ) : (
                   <>
                     <RotateCcw className="h-5 w-5 text-rose-500" />
-                    <span className="text-rose-700">{editReturnItem ? "Edit Retur Roti" : "Input Retur Roti (Auto HPP)"}</span>
+                    <span className="text-rose-700">{editReturnItem ? "Edit Retur Roti" : "Input Retur Roti (Potong Harga Jual)"}</span>
                   </>
                 )}
               </DialogTitle>
@@ -1898,7 +1934,14 @@ export default function PenjualanPage() {
                       "Pilih Account / Marketing Agent"
                     )}
                   </Label>
-                  <Select value={returnForm.agentId} onValueChange={v => setReturnForm({ ...returnForm, agentId: v })}>
+                  <Select
+                    value={returnForm.agentId}
+                    onValueChange={v => {
+                      setReturnForm({ ...returnForm, agentId: v })
+                      const sp = getSellingPriceFor(returnForm.recipeId || returnForm.recipeName, v)
+                      setEstimatedSellingPrice(sp)
+                    }}
+                  >
                     <SelectTrigger className={`rounded-xl font-bold ${
                       returnForm.category === "BONUS"
                         ? "border-purple-300 text-purple-900 bg-purple-50/50"
@@ -2093,7 +2136,7 @@ export default function PenjualanPage() {
                 </div>
               )}
 
-              {/* Automatic HPP Preview */}
+              {/* Automatic Calculation Preview */}
               <div className={`p-3 rounded-xl space-y-1 text-xs border ${
                 returnForm.category === "BONUS"
                   ? "bg-purple-50 border-purple-200"
@@ -2101,32 +2144,52 @@ export default function PenjualanPage() {
                   ? "bg-amber-50 border-amber-200"
                   : "bg-rose-50 border-rose-200"
               }`}>
-                <div className="flex justify-between items-center">
-                  <span className="font-bold text-slate-600">Estimasi HPP / Pcs Roti:</span>
-                  <span className={`font-bold ${
-                    returnForm.category === "BONUS" ? "text-purple-700" : returnForm.category === "FREE" ? "text-amber-800" : "text-rose-700"
-                  }`}>
-                    {formatCurrency(estimatedHppPerPcs)} / pcs
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="font-bold text-slate-600">
-                    {returnForm.category === "BONUS"
-                      ? "Total Biaya HPP Bonus (Otomatis):"
-                      : returnForm.category === "FREE"
-                      ? "Total Biaya HPP Roti Free (Otomatis):"
-                      : "Total Potongan Penjualan (HPP):"}
-                  </span>
-                  <span className={`font-black text-sm ${
-                    returnForm.category === "BONUS" ? "text-purple-800" : returnForm.category === "FREE" ? "text-amber-800" : "text-rose-600"
-                  }`}>
-                    {formatCurrency(estimatedHppPerPcs * (parseInt(returnForm.quantity, 10) || 1))}
-                  </span>
-                </div>
-                {returnForm.category === "RETUR" && (
-                  <p className="text-[11px] text-rose-700/90 pt-1.5 border-t border-rose-200/60 font-medium">
-                    💡 Nominal potongan HPP ini otomatis memotong Pos Penjualan agen & mengurangi Penjualan Bersih Bulanan.
-                  </p>
+                {returnForm.category === "RETUR" ? (
+                  <>
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-slate-600">Harga Jual / Pcs (Potong Toko):</span>
+                      <span className="font-bold text-rose-700">
+                        {formatCurrency(estimatedSellingPrice)} / pcs
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-slate-600">
+                        Total Potongan Penjualan Toko (Harga Jual):
+                      </span>
+                      <span className="font-black text-sm text-rose-600">
+                        {formatCurrency(estimatedSellingPrice * (parseInt(returnForm.quantity, 10) || 1))}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-rose-700/90 pt-1.5 border-t border-rose-200/60 font-medium">
+                      💡 Retur reguler agen/toko memotong faktur penjualan sesuai Harga Jual riil, bukan modal HPP.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-slate-600">Estimasi HPP / Pcs Roti:</span>
+                      <span className={`font-bold ${
+                        returnForm.category === "BONUS" ? "text-purple-700" : "text-amber-800"
+                      }`}>
+                        {formatCurrency(estimatedHppPerPcs)} / pcs
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-slate-600">
+                        {returnForm.category === "BONUS"
+                          ? "Total Biaya HPP Bonus (Otomatis):"
+                          : "Total Biaya HPP Roti Free (Otomatis):"}
+                      </span>
+                      <span className={`font-black text-sm ${
+                        returnForm.category === "BONUS" ? "text-purple-800" : "text-amber-800"
+                      }`}>
+                        {formatCurrency(estimatedHppPerPcs * (parseInt(returnForm.quantity, 10) || 1))}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 pt-1.5 border-t border-slate-200/60 font-medium">
+                      💡 Nilai modal HPP bahan baku ini dicatat sebagai beban promosi / insentif perusahaan.
+                    </p>
+                  </>
                 )}
               </div>
 
@@ -2166,7 +2229,7 @@ export default function PenjualanPage() {
                   ? "Simpan Bonus Marketing Agent"
                   : returnForm.category === "FREE"
                   ? "Simpan Roti Free (Tester)"
-                  : "Simpan Retur Roti (Auto HPP)"}
+                  : "Simpan Retur Roti (Harga Jual)"}
               </Button>
             </form>
           </DialogContent>

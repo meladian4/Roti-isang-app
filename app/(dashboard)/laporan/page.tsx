@@ -166,7 +166,7 @@ export default function LaporanPage() {
 
     csvContent += "RINGKASAN BUKU BESAR LABA RUGI\n"
     csvContent += `Penjualan Kotor (Semua Toko) (+),${data.summary.totalRevenue}\n`
-    csvContent += `Potongan Retur Reguler (Nominal HPP) (-),${data.summary.totalRegularReturnLoss ?? data.summary.totalReturnLoss}\n`
+    csvContent += `Potongan Retur Reguler (Harga Jual Toko) (-),${data.summary.totalRegularReturnLoss ?? data.summary.totalReturnLoss}\n`
     csvContent += `Total Penjualan Bersih (Net Sales),${data.summary.netRevenue ?? (data.summary.totalRevenue - (data.summary.totalRegularReturnLoss ?? data.summary.totalReturnLoss))}\n`
     csvContent += `Total HPP Produksi Roti (-),${data.summary.totalCost}\n`
     csvContent += `Beban Roti Free & Bonus (-),${(data.summary.totalFreeLoss || 0) + (data.summary.totalBonusLoss || 0)}\n`
@@ -209,7 +209,7 @@ export default function LaporanPage() {
     ? [
         { name: "Penjualan Bersih (+)", value: omsetBersih },
         { name: "HPP Produksi (-)", value: hpp },
-        { name: "Potongan Retur HPP (-)", value: regularReturnLoss },
+        { name: "Potongan Retur (-)", value: regularReturnLoss },
         { name: "Beban Operasional (-)", value: operasional },
         { name: "Laba Bersih Akhir", value: Math.max(0, netProfit) },
       ]
@@ -374,7 +374,7 @@ export default function LaporanPage() {
                 <p className="text-sm sm:text-base lg:text-lg font-black text-rose-600 tracking-tight mt-0.5 truncate" title={formatCurrency(regularReturnLoss)}>
                   {loading ? "..." : formatCurrency(regularReturnLoss)}
                 </p>
-                <p className="text-[9px] sm:text-[10px] text-rose-500 font-semibold truncate">Potong Penjualan (HPP)</p>
+                <p className="text-[9px] sm:text-[10px] text-rose-500 font-semibold truncate">Potong Penjualan (Harga Jual)</p>
               </div>
             </div>
           </div>
@@ -455,7 +455,7 @@ export default function LaporanPage() {
                     <span className="font-bold text-slate-800">+{formatCurrency(omsetKotor)}</span>
                   </div>
                   <div className="flex justify-between text-rose-600 font-semibold">
-                    <span>• Potongan Retur Reguler (Nominal HPP)</span>
+                    <span>• Potongan Retur Reguler (Harga Jual Toko)</span>
                     <span className="font-bold">-{formatCurrency(regularReturnLoss)}</span>
                   </div>
                 </div>

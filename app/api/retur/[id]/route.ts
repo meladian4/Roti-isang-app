@@ -30,17 +30,72 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       })
     }
 
+    const isBonus = (data.reason || "").toLowerCase().includes("bonus")
+    const isFree =
+      (data.reason || "").toLowerCase().includes("free") ||
+      (data.reason || "").toLowerCase().includes("tester") ||
+      (data.reason || "").toLowerCase().includes("sampel")
+    const isRegular = !isBonus && !isFree
+
+    let costPerUnit = 0
     if (recipe) {
       validRecipeId = recipe.id
       const batchCost = recipe.ingredients.reduce(
         (sum, ri) => sum + ri.quantity * ri.ingredient.pricePerUnit,
         0
       )
-      const costPerUnit = recipe.servingsPerBatch > 0 ? batchCost / recipe.servingsPerBatch : 0
-      lossAmount = qty * costPerUnit
-    } else if (data.lossAmount) {
-      const cleanLossStr = data.lossAmount.toString().replace(/\./g, "").replace(",", ".")
-      lossAmount = parseFloat(cleanLossStr) || 0
+      costPerUnit = recipe.servingsPerBatch > 0 ? batchCost / recipe.servingsPerBatch : 0
+    }
+
+    if (isRegular) {
+      // Retur Reguler: Memotong faktur penjualan toko berdasarkan HARGA JUAL
+      let unitSellingPrice = parseFloat(String(data.sellingPrice || data.pricePerUnit || 0).replace(/\./g, "").replace(",", ".")) || 0
+
+      if (!unitSellingPrice && data.agentId) {
+        const latestSale = await prisma.sale.findFirst({
+          where: {
+            agentId: data.agentId,
+            OR: [
+              validRecipeId ? { recipeId: validRecipeId } : {},
+              { recipeName: data.recipeName || recipe?.name || "" }
+            ]
+          },
+          orderBy: { date: "desc" }
+        })
+        if (latestSale) {
+          unitSellingPrice = latestSale.pricePerUnit
+        }
+      }
+
+      if (!unitSellingPrice) {
+        const anySale = await prisma.sale.findFirst({
+          where: {
+            OR: [
+              validRecipeId ? { recipeId: validRecipeId } : {},
+              { recipeName: data.recipeName || recipe?.name || "" }
+            ]
+          },
+          orderBy: { date: "desc" }
+        })
+        if (anySale) {
+          unitSellingPrice = anySale.pricePerUnit
+        }
+      }
+
+      if (data.lossAmount) {
+        const cleanLossStr = data.lossAmount.toString().replace(/\./g, "").replace(",", ".")
+        lossAmount = parseFloat(cleanLossStr) || 0
+      } else {
+        lossAmount = qty * (unitSellingPrice || costPerUnit)
+      }
+    } else {
+      // Free & Bonus: Beban modal HPP perusahaan
+      if (data.lossAmount) {
+        const cleanLossStr = data.lossAmount.toString().replace(/\./g, "").replace(",", ".")
+        lossAmount = parseFloat(cleanLossStr) || 0
+      } else {
+        lossAmount = qty * costPerUnit
+      }
     }
 
     // STRICT CHECK: Available bread stock validation for edit
