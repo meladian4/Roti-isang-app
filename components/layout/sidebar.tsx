@@ -22,15 +22,18 @@ import {
 } from "lucide-react"
 import { signOut } from "next-auth/react"
 
-const navItems = [
+const mainNavItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, badge: null },
   { href: "/bahan-baku", label: "Bahan Baku", icon: Package, badge: null },
   { href: "/resep", label: "Resep", icon: BookOpen, badge: null },
   { href: "/produksi", label: "Produksi", icon: Factory, badge: null },
   { href: "/penjualan", label: "Penjualan & Retur", icon: ShoppingBag, badge: null },
-  { href: "/pesanan", label: "Pesanan", icon: ClipboardList, badge: "BARU" },
   { href: "/operasional", label: "Beban Operasional", icon: Wallet, badge: null },
   { href: "/laporan", label: "Laporan & Buku Besar", icon: BarChart3, badge: null },
+]
+
+const externalNavItems = [
+  { href: "/pesanan", label: "Pesanan", icon: ClipboardList, badge: "LOGBOOK" },
 ]
 
 export function Sidebar() {
@@ -115,7 +118,7 @@ export function Sidebar() {
               <div className="px-3 py-1">
                 <p className="text-[10px] font-extrabold tracking-widest text-emerald-200/60 uppercase">Menu Utama</p>
               </div>
-              {navItems.map((item) => {
+              {mainNavItems.map((item) => {
                 const Icon = item.icon
                 const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
                 return (
@@ -150,6 +153,55 @@ export function Sidebar() {
                     ) : isActive ? (
                       <div className="h-2 w-2 rounded-full bg-emerald-300 animate-pulse" />
                     ) : null}
+                  </Link>
+                )
+              })}
+
+              {/* Separator / Jarak Khusus Menu di Luar Workflow */}
+              <div className="pt-4 pb-1">
+                <div className="border-t border-white/20 my-2" />
+                <div className="px-3 py-1 flex items-center justify-between">
+                  <span className="text-[10px] font-extrabold tracking-wider text-amber-300/90 uppercase flex items-center gap-1.5">
+                    📝 Logbook Mandiri
+                  </span>
+                  <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-200 border border-amber-400/30 font-bold">
+                    Di Luar Workflow
+                  </span>
+                </div>
+              </div>
+
+              {/* Menu Pesanan (Di Luar Workflow) */}
+              {externalNavItems.map((item) => {
+                const Icon = item.icon
+                const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileOpen(false)}
+                    className={cn(
+                      "flex items-center justify-between px-4 py-3 rounded-full text-sm font-bold transition-all duration-200 border border-dashed",
+                      isActive
+                        ? "bg-amber-400/20 text-amber-100 border-amber-300/60 shadow-md"
+                        : "border-white/20 text-emerald-100/90 hover:bg-white/10 hover:border-white/40"
+                    )}
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <div
+                        className={cn(
+                          "p-2 rounded-xl transition-all",
+                          isActive
+                            ? "bg-amber-400 text-amber-950 shadow-xs"
+                            : "bg-white/10 text-amber-300"
+                        )}
+                      >
+                        <Icon className="h-4.5 w-4.5" />
+                      </div>
+                      <span className="text-sm">{item.label}</span>
+                    </div>
+                    <span className="px-2 py-0.5 text-[9px] font-black bg-amber-400 text-amber-950 rounded-full tracking-wider uppercase">
+                      {item.badge}
+                    </span>
                   </Link>
                 )
               })}
@@ -222,7 +274,7 @@ export function Sidebar() {
               <p className="text-[10px] font-extrabold tracking-widest text-emerald-200/60 uppercase">Menu Utama</p>
             </div>
           )}
-          {navItems.map((item) => {
+          {mainNavItems.map((item) => {
             const Icon = item.icon
             const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
             return (
@@ -265,6 +317,63 @@ export function Sidebar() {
                       <div className="h-2 w-2 rounded-full bg-emerald-300 shadow-sm shadow-emerald-300 animate-pulse" />
                     ) : null}
                   </>
+                )}
+              </Link>
+            )
+          })}
+
+          {/* Separator / Jarak Khusus Menu di Luar Workflow */}
+          <div className="pt-3 pb-1">
+            <div className="border-t border-white/20 my-2 mx-1" />
+            {!isCollapsed && (
+              <div className="px-3 py-1 flex items-center justify-between transition-opacity duration-300">
+                <span className="text-[10px] font-extrabold tracking-wider text-amber-300/90 uppercase flex items-center gap-1.5">
+                  📝 Logbook Mandiri
+                </span>
+                <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-200 border border-amber-400/30 font-bold">
+                  Di Luar Workflow
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Menu Pesanan (Di Luar Workflow) */}
+          {externalNavItems.map((item) => {
+            const Icon = item.icon
+            const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                title={isCollapsed ? `${item.label} (Di Luar Workflow)` : undefined}
+                className={cn(
+                  "relative group flex items-center justify-between py-3 text-sm font-bold transition-all duration-300 border border-dashed",
+                  isCollapsed ? "px-3 rounded-full justify-center" : "px-4 rounded-full",
+                  isActive
+                    ? "bg-amber-400/20 text-amber-100 border-amber-300/60 shadow-md shadow-emerald-950/20"
+                    : "border-white/20 text-emerald-100/90 hover:bg-white/10 hover:border-white/40 hover:text-white"
+                )}
+              >
+                <div className="flex items-center gap-3.5">
+                  <div
+                    className={cn(
+                      "p-2 rounded-xl transition-all duration-300 group-hover:scale-110 flex-shrink-0",
+                      isActive
+                        ? "bg-amber-400 text-amber-950 shadow-xs"
+                        : "bg-white/10 text-amber-300 group-hover:bg-white/20"
+                    )}
+                  >
+                    <Icon className="h-4.5 w-4.5" />
+                  </div>
+                  {!isCollapsed && (
+                    <span className="whitespace-nowrap transition-opacity duration-300 text-sm">{item.label}</span>
+                  )}
+                </div>
+
+                {!isCollapsed && (
+                  <span className="px-2 py-0.5 text-[9px] font-black bg-amber-400 text-amber-950 rounded-full tracking-wider uppercase shadow-xs">
+                    {item.badge}
+                  </span>
                 )}
               </Link>
             )
