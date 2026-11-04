@@ -25,6 +25,7 @@ import {
   RotateCcw,
   User,
   Users,
+  Wheat,
 } from "lucide-react"
 
 interface Order {
@@ -74,7 +75,7 @@ export default function PesananPage() {
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split("T")[0],
     customerName: "",
-    details: "",
+    details: "Roti Isang Original",
     quantity: "",
     status: "MASUK" as "MASUK" | "SELESAI",
     notes: "",
@@ -160,7 +161,7 @@ export default function PesananPage() {
     setFormData({
       date: new Date().toISOString().split("T")[0],
       customerName: "",
-      details: "",
+      details: "Roti Isang Original",
       quantity: "",
       status: "MASUK",
       notes: "",
@@ -656,12 +657,10 @@ export default function PesananPage() {
               <div className="space-y-1.5">
                 <div className="flex justify-between items-center">
                   <Label className="font-bold text-slate-700 text-xs">Detail Roti Pesanan *</Label>
-                  {recipes.length > 0 && (
-                    <span className="text-[10px] text-slate-400">Klik nama roti untuk bantu isi:</span>
-                  )}
+                  <span className="text-[10px] text-slate-400">Pilihan cepat:</span>
                 </div>
                 <Textarea
-                  placeholder="Contoh: Roti Coklat 50 pcs, Roti Pisang Keju 30 pcs, Roti Abon 20 pcs..."
+                  placeholder="Contoh: Roti Isang Original (100 pcs)..."
                   value={formData.details}
                   onChange={e => setFormData({ ...formData, details: e.target.value })}
                   rows={2}
@@ -669,24 +668,25 @@ export default function PesananPage() {
                   className="rounded-xl text-xs"
                 />
 
-                {/* Quick Recipe Chips */}
-                {recipes.length > 0 && (
-                  <div className="flex flex-wrap gap-1 pt-1">
-                    {recipes.slice(0, 5).map(r => (
-                      <button
-                        key={r.id}
-                        type="button"
-                        onClick={() => {
-                          const current = formData.details ? `${formData.details}, ` : ""
-                          setFormData({ ...formData, details: `${current}${r.name} ` })
-                        }}
-                        className="px-2 py-0.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-200 transition-colors"
-                      >
-                        + {r.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                {/* Quick Recipe Chip: Langsung ke + Roti Isang Original */}
+                <div className="flex items-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData(prev => ({
+                        ...prev,
+                        details: "Roti Isang Original",
+                      }))
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-200 transition-colors shadow-2xs active:scale-95"
+                  >
+                    <Wheat className="h-3.5 w-3.5 text-emerald-600" />
+                    + Roti Isang Original
+                  </button>
+                  <span className="text-[10px] text-slate-400">
+                    (Klik untuk isi otomatis)
+                  </span>
+                </div>
               </div>
 
               {/* Total Jumlah (pcs) */}
