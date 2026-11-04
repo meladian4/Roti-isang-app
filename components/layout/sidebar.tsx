@@ -18,6 +18,7 @@ import {
   Sparkles,
   Menu,
   X,
+  ClipboardList,
 } from "lucide-react"
 import { signOut } from "next-auth/react"
 
@@ -27,7 +28,8 @@ const navItems = [
   { href: "/resep", label: "Resep", icon: BookOpen, badge: null },
   { href: "/produksi", label: "Produksi", icon: Factory, badge: null },
   { href: "/penjualan", label: "Penjualan & Retur", icon: ShoppingBag, badge: null },
-  { href: "/operasional", label: "Beban Operasional", icon: Wallet, badge: "BARU" },
+  { href: "/pesanan", label: "Pesanan", icon: ClipboardList, badge: "BARU" },
+  { href: "/operasional", label: "Beban Operasional", icon: Wallet, badge: null },
   { href: "/laporan", label: "Laporan & Buku Besar", icon: BarChart3, badge: null },
 ]
 
