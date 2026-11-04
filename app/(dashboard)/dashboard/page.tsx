@@ -1,13 +1,33 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo, useCallback } from "react"
 import { Header } from "@/components/layout/header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { formatCurrency, formatDate } from "@/lib/utils"
-import { Package, Factory, TrendingUp, AlertTriangle, Wheat, Sparkles, ArrowRight, Activity, DollarSign, ShoppingBag, RotateCcw, Wallet } from "lucide-react"
+import { Package, Factory, TrendingUp, AlertTriangle, Wheat, Sparkles, ArrowRight, Activity, DollarSign, ShoppingBag, RotateCcw, Wallet, Calendar, RefreshCw } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+
+const MONTHS = [
+  { val: "1", label: "Januari" },
+  { val: "2", label: "Februari" },
+  { val: "3", label: "Maret" },
+  { val: "4", label: "April" },
+  { val: "5", label: "Mei" },
+  { val: "6", label: "Juni" },
+  { val: "7", label: "Juli" },
+  { val: "8", label: "Agustus" },
+  { val: "9", label: "September" },
+  { val: "10", label: "Oktober" },
+  { val: "11", label: "November" },
+  { val: "12", label: "Desember" },
+]
+
+const YEARS = ["2024", "2025", "2026", "2027", "2028"]
 
 interface DashboardData {
   summary: {
@@ -29,13 +49,71 @@ interface DashboardData {
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+
+  // Filter state (Compact Date & Month Customizer)
+  const now = new Date()
+  const currentMonth = (now.getMonth() + 1).toString()
+  const currentYear = now.getFullYear().toString()
+
+  const [filterType, setFilterType] = useState<"current" | "month" | "range" | "all">("current")
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth)
+  const [selectedYear, setSelectedYear] = useState(currentYear)
+  const [startDate, setStartDate] = useState("")
+  const [endDate, setEndDate] = useState("")
+
+  const fetchDashboardData = useCallback(async (query: string) => {
+    setIsRefreshing(true)
+    try {
+      const res = await fetch(`/api/laporan?${query}`)
+      if (res.ok) {
+        const d = await res.json()
+        setData(d)
+      }
+    } catch (err) {
+      console.error("Gagal memuat data dashboard:", err)
+    } finally {
+      setIsRefreshing(false)
+      setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
-    fetch("/api/laporan?period=month")
-      .then((r) => r.json())
-      .then((d) => { setData(d); setLoading(false) })
-      .catch(() => setLoading(false))
-  }, [])
+    if (filterType === "current") {
+      fetchDashboardData("period=month")
+    } else if (filterType === "month") {
+      fetchDashboardData(`month=${selectedMonth}&year=${selectedYear}`)
+    } else if (filterType === "all") {
+      fetchDashboardData("period=all")
+    }
+  }, [filterType, selectedMonth, selectedYear, fetchDashboardData])
+
+  const handleApplyRange = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!startDate || !endDate) {
+      alert("Pilih tanggal mulai dan tanggal akhir terlebih dahulu!")
+      return
+    }
+    fetchDashboardData(`startDate=${startDate}&endDate=${endDate}`)
+  }
+
+  const activePeriodLabel = useMemo(() => {
+    if (filterType === "current") {
+      const mLabel = MONTHS.find((m) => m.val === currentMonth)?.label || ""
+      return `${mLabel} ${currentYear} (Bulan Ini)`
+    }
+    if (filterType === "month") {
+      const mLabel = MONTHS.find((m) => m.val === selectedMonth)?.label || ""
+      return `${mLabel} ${selectedYear}`
+    }
+    if (filterType === "range") {
+      if (startDate && endDate) {
+        return `${formatDate(startDate)} - ${formatDate(endDate)}`
+      }
+      return "Rentang Tanggal Khusus"
+    }
+    return "Semua Data Akumulatif"
+  }, [filterType, selectedMonth, selectedYear, startDate, endDate, currentMonth, currentYear])
 
   if (loading) {
     return (
@@ -60,10 +138,10 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen">
       <Header title="Dashboard Produksi & Keuangan" description="Ringkasan real-time aktivitas produksi, omset penjualan, dan Laba Bersih" />
-      <div className="p-4 sm:p-8 space-y-5 sm:space-y-8 max-w-7xl mx-auto">
+      <div className="p-4 sm:p-8 space-y-4 sm:space-y-6 max-w-7xl mx-auto">
 
         {/* Hero Banner Card - Fresh Emerald Green Theme */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 p-8 text-white shadow-xl shadow-emerald-950/20 border border-white/20">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 p-6 sm:p-8 text-white shadow-xl shadow-emerald-950/20 border border-white/20">
           <div className="absolute -right-10 -bottom-10 opacity-15 pointer-events-none">
             <Wheat className="h-72 w-72 text-white" />
           </div>
@@ -72,17 +150,143 @@ export default function DashboardPage() {
               <Sparkles className="h-3.5 w-3.5" />
               Sistem Manajemen Roti Isang v3.0
             </span>
-            <h1 className="text-3xl sm:text-4xl font-black tracking-tight leading-tight">
+            <h1 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight">
               Selamat Datang Kembali! 👋
             </h1>
-            <p className="text-emerald-100/95 text-sm font-medium mt-2 leading-relaxed">
+            <p className="text-emerald-100/95 text-xs sm:text-sm font-medium mt-1.5 sm:mt-2 leading-relaxed">
               Pantau ketersediaan stok, kalkulasi otomatis kebutuhan bahan baku & adonan, omset penjualan, serta estimasi Laba Bersih secara real-time.
             </p>
           </div>
         </div>
 
+        {/* Compact Date & Month Customizer Filter Bar ("Kecil Aja") */}
+        <div className="bg-white/90 backdrop-blur-md p-2.5 sm:p-3 rounded-2xl border border-emerald-500/15 shadow-xs flex flex-wrap items-center justify-between gap-2.5">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider flex items-center gap-1 mr-0.5">
+              <Calendar className="h-3.5 w-3.5 text-emerald-600" /> Filter:
+            </span>
+
+            {/* Quick Segmented Mode Buttons */}
+            <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-xl">
+              <button
+                type="button"
+                onClick={() => setFilterType("current")}
+                className={`text-[11px] font-bold px-2.5 py-1 rounded-lg transition-all ${
+                  filterType === "current"
+                    ? "bg-white text-emerald-800 shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Bulan Ini
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterType("month")}
+                className={`text-[11px] font-bold px-2.5 py-1 rounded-lg transition-all ${
+                  filterType === "month"
+                    ? "bg-white text-emerald-800 shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Pilih Bulan
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterType("range")}
+                className={`text-[11px] font-bold px-2.5 py-1 rounded-lg transition-all ${
+                  filterType === "range"
+                    ? "bg-white text-emerald-800 shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Rentang Tanggal
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterType("all")}
+                className={`text-[11px] font-bold px-2.5 py-1 rounded-lg transition-all ${
+                  filterType === "all"
+                    ? "bg-white text-emerald-800 shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Semua
+              </button>
+            </div>
+
+            {/* If Pilih Bulan is selected */}
+            {filterType === "month" && (
+              <div className="flex items-center gap-1.5 pl-1.5 sm:border-l sm:border-slate-200">
+                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                  <SelectTrigger className="h-7 w-28 text-[11px] font-bold rounded-lg bg-white border-emerald-300 text-emerald-900">
+                    <SelectValue placeholder="Bulan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MONTHS.map((m) => (
+                      <SelectItem key={m.val} value={m.val} className="text-xs font-medium">
+                        {m.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={selectedYear} onValueChange={setSelectedYear}>
+                  <SelectTrigger className="h-7 w-20 text-[11px] font-bold rounded-lg bg-white border-emerald-300 text-emerald-900">
+                    <SelectValue placeholder="Tahun" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {YEARS.map((y) => (
+                      <SelectItem key={y} value={y} className="text-xs font-medium">
+                        {y}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* If Rentang Tanggal is selected */}
+            {filterType === "range" && (
+              <form onSubmit={handleApplyRange} className="flex flex-wrap items-center gap-1.5 pl-1.5 sm:border-l sm:border-slate-200">
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="h-7 w-32 text-[11px] font-medium rounded-lg bg-white border-emerald-300"
+                  required
+                />
+                <span className="text-slate-400 text-xs font-semibold">s/d</span>
+                <Input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="h-7 w-32 text-[11px] font-medium rounded-lg bg-white border-emerald-300"
+                  required
+                />
+                <Button
+                  type="submit"
+                  size="sm"
+                  className="h-7 px-2.5 rounded-lg text-[11px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
+                >
+                  Terapkan
+                </Button>
+              </form>
+            )}
+          </div>
+
+          {/* Active Period Badge & Refreshing Spinner */}
+          <div className="flex items-center gap-2">
+            {isRefreshing && (
+              <RefreshCw className="h-3.5 w-3.5 text-emerald-600 animate-spin" />
+            )}
+            <Badge variant="outline" className="text-[11px] font-bold border-emerald-300 bg-emerald-50 text-emerald-800 rounded-lg px-2.5 py-0.5 shadow-2xs">
+              📅 {activePeriodLabel}
+            </Badge>
+          </div>
+        </div>
+
         {/* Metric Cards Grid - 4 Main Financial Metrics */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 md:gap-5">
+        <div className={`grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 md:gap-5 transition-opacity duration-200 ${isRefreshing ? "opacity-60" : "opacity-100"}`}>
           {/* Card 1: Omset Penjualan */}
           <div className="glass-card rounded-2xl sm:rounded-3xl p-3 sm:p-5 md:p-6 relative overflow-hidden group">
             <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4">
@@ -193,7 +397,7 @@ export default function DashboardPage() {
         )}
 
         {/* Recent Productions & Sales Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className={`grid grid-cols-1 lg:grid-cols-2 gap-6 transition-opacity duration-200 ${isRefreshing ? "opacity-60" : "opacity-100"}`}>
           {/* Recent Sales Card */}
           <Card className="overflow-hidden border-emerald-500/10">
             <CardHeader className="bg-gradient-to-r from-emerald-50/90 to-teal-50/60 border-b border-emerald-100 flex flex-row items-center justify-between py-5">
@@ -211,7 +415,7 @@ export default function DashboardPage() {
               {!data?.sales?.length ? (
                 <div className="text-center text-slate-400 py-12">
                   <ShoppingBag className="h-10 w-10 mx-auto mb-2 opacity-20" />
-                  <p className="font-medium text-xs">Belum ada transaksi penjualan bulan ini</p>
+                  <p className="font-medium text-xs">Belum ada transaksi penjualan pada periode ini</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -254,10 +458,10 @@ export default function DashboardPage() {
               </Link>
             </CardHeader>
             <CardContent className="p-0">
-              {!data?.productions.length ? (
+              {!data?.productions?.length ? (
                 <div className="text-center text-slate-400 py-12">
                   <Package className="h-10 w-10 mx-auto mb-2 opacity-20" />
-                  <p className="font-medium text-xs">Belum ada catatan produksi bulan ini</p>
+                  <p className="font-medium text-xs">Belum ada catatan produksi pada periode ini</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
