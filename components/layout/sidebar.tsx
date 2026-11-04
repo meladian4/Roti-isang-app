@@ -158,21 +158,18 @@ export function Sidebar() {
                 )
               })}
 
-              {/* Separator / Jarak Khusus Menu di Luar Workflow */}
+              {/* Separator / Jarak Khusus Menu Logbook Mandiri */}
               <div className="pt-4 pb-1">
                 <div className="border-t border-white/15 my-2" />
-                <div className="px-3 py-1 flex items-center justify-between">
-                  <span className="text-[10px] font-extrabold tracking-wider text-emerald-200/80 uppercase flex items-center gap-1.5 whitespace-nowrap">
+                <div className="px-3 py-1">
+                  <span className="text-[10px] font-extrabold tracking-widest text-emerald-200/90 uppercase flex items-center gap-1.5 whitespace-nowrap">
                     <ScrollText className="h-3.5 w-3.5 text-emerald-300" />
                     Logbook Mandiri
-                  </span>
-                  <span className="text-[9px] px-2.5 py-0.5 rounded-full bg-white/10 text-emerald-100 border border-white/20 font-bold tracking-wide">
-                    Di Luar Workflow
                   </span>
                 </div>
               </div>
 
-              {/* Menu Pesanan (Di Luar Workflow) */}
+              {/* Menu Pesanan (Warna Kuning Emas) */}
               {externalNavItems.map((item) => {
                 const Icon = item.icon
                 const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
@@ -184,8 +181,8 @@ export function Sidebar() {
                     className={cn(
                       "flex items-center justify-between px-4 py-3 rounded-full text-sm font-bold transition-all duration-200 border border-dashed",
                       isActive
-                        ? "bg-emerald-300/25 text-white border-emerald-300/40 backdrop-blur-md shadow-md"
-                        : "border-white/25 text-emerald-100/90 hover:bg-white/10 hover:border-white/40 hover:text-white"
+                        ? "bg-amber-400/25 text-amber-100 border-amber-300/80 shadow-md"
+                        : "border-amber-300/60 bg-amber-400/10 text-emerald-100/90 hover:bg-amber-400/20 hover:border-amber-300/90 hover:text-white"
                     )}
                   >
                     <div className="flex items-center gap-3.5">
@@ -193,15 +190,15 @@ export function Sidebar() {
                         className={cn(
                           "p-2 rounded-xl transition-all",
                           isActive
-                            ? "bg-emerald-400 text-emerald-950 shadow-xs"
-                            : "bg-white/10 text-emerald-200"
+                            ? "bg-amber-400 text-amber-950 shadow-xs"
+                            : "bg-amber-400 text-amber-950"
                         )}
                       >
                         <Icon className="h-4.5 w-4.5" />
                       </div>
                       <span className="text-sm">{item.label}</span>
                     </div>
-                    <span className="px-2 py-0.5 text-[9px] font-black bg-emerald-400/20 text-emerald-200 border border-emerald-400/30 rounded-full tracking-wider uppercase">
+                    <span className="px-2.5 py-0.5 text-[9px] font-black bg-amber-400 text-amber-950 rounded-full tracking-wider uppercase shadow-xs">
                       {item.badge}
                     </span>
                   </Link>
@@ -324,23 +321,20 @@ export function Sidebar() {
             )
           })}
 
-          {/* Separator / Jarak Khusus Menu di Luar Workflow */}
+          {/* Separator / Jarak Khusus Menu Logbook Mandiri */}
           <div className="pt-3 pb-1">
             <div className="border-t border-white/15 my-2 mx-1" />
             {!isCollapsed && (
-              <div className="px-3 py-1 flex items-center justify-between transition-opacity duration-300">
-                <span className="text-[10px] font-extrabold tracking-wider text-emerald-200/80 uppercase flex items-center gap-1.5 whitespace-nowrap">
+              <div className="px-3 py-1 transition-opacity duration-300">
+                <span className="text-[10px] font-extrabold tracking-widest text-emerald-200/90 uppercase flex items-center gap-1.5 whitespace-nowrap">
                   <ScrollText className="h-3.5 w-3.5 text-emerald-300" />
                   Logbook Mandiri
-                </span>
-                <span className="text-[9px] px-2.5 py-0.5 rounded-full bg-white/10 text-emerald-100 border border-white/20 font-bold tracking-wide">
-                  Di Luar Workflow
                 </span>
               </div>
             )}
           </div>
 
-          {/* Menu Pesanan (Di Luar Workflow) */}
+          {/* Menu Pesanan (Warna Kuning Emas) */}
           {externalNavItems.map((item) => {
             const Icon = item.icon
             const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
@@ -348,13 +342,13 @@ export function Sidebar() {
               <Link
                 key={item.href}
                 href={item.href}
-                title={isCollapsed ? `${item.label} (Di Luar Workflow)` : undefined}
+                title={isCollapsed ? `${item.label} (Logbook)` : undefined}
                 className={cn(
                   "relative group flex items-center justify-between py-3 text-sm font-bold transition-all duration-300 border border-dashed",
                   isCollapsed ? "px-3 rounded-full justify-center" : "px-4 rounded-full",
                   isActive
-                    ? "bg-emerald-300/25 text-white border-emerald-300/40 backdrop-blur-md shadow-md shadow-emerald-950/20"
-                    : "border-white/25 text-emerald-100/90 hover:bg-white/10 hover:border-white/40 hover:text-white"
+                    ? "bg-amber-400/25 text-amber-100 border-amber-300/80 shadow-md shadow-emerald-950/20"
+                    : "border-amber-300/60 bg-amber-400/10 text-emerald-100/90 hover:bg-amber-400/20 hover:border-amber-300/90 hover:text-white"
                 )}
               >
                 <div className="flex items-center gap-3.5">
@@ -362,8 +356,8 @@ export function Sidebar() {
                     className={cn(
                       "p-2 rounded-xl transition-all duration-300 group-hover:scale-110 flex-shrink-0",
                       isActive
-                        ? "bg-emerald-400 text-emerald-950 shadow-xs"
-                        : "bg-white/10 text-emerald-200 group-hover:bg-white/20"
+                        ? "bg-amber-400 text-amber-950 shadow-xs"
+                        : "bg-amber-400 text-amber-950"
                     )}
                   >
                     <Icon className="h-4.5 w-4.5" />
@@ -374,7 +368,7 @@ export function Sidebar() {
                 </div>
 
                 {!isCollapsed && (
-                  <span className="px-2 py-0.5 text-[9px] font-black bg-emerald-400/20 text-emerald-200 border border-emerald-400/30 rounded-full tracking-wider uppercase shadow-xs">
+                  <span className="px-2.5 py-0.5 text-[9px] font-black bg-amber-400 text-amber-950 rounded-full tracking-wider uppercase shadow-xs">
                     {item.badge}
                   </span>
                 )}
