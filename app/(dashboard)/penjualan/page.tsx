@@ -179,8 +179,8 @@ export default function PenjualanPage() {
   // Top level active tab: "penjualan" | "retur" | "rekap-agent"
   const [activeTab, setActiveTab] = useState<"penjualan" | "retur" | "rekap-agent">("penjualan")
 
-  // Sub-menu state for Retur tab: "semua" | "retur" | "free"
-  const [returSubTab, setReturSubTab] = useState<"semua" | "retur" | "free">("semua")
+  // Sub-menu state for Retur tab: "semua" | "retur" | "free" | "bonus"
+  const [returSubTab, setReturSubTab] = useState<"semua" | "retur" | "free" | "bonus">("semua")
 
   // Sales Form State
   const [openSaleModal, setOpenSaleModal] = useState(false)
@@ -799,7 +799,7 @@ export default function PenjualanPage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-black/20 p-3 rounded-2xl border border-white/10 backdrop-blur-xs text-xs w-full lg:w-auto">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 bg-black/20 p-3 rounded-2xl border border-white/10 backdrop-blur-xs text-xs w-full lg:w-auto">
               <div className="text-center p-2 rounded-xl bg-white/5">
                 <p className="text-[10px] text-emerald-200 uppercase font-bold">Diproduksi</p>
                 <p className="text-sm font-black text-white">{formatNumber(bannerProduced)} pcs</p>
@@ -809,8 +809,12 @@ export default function PenjualanPage() {
                 <p className="text-sm font-black text-white">{formatNumber(bannerSold)} pcs</p>
               </div>
               <div className="text-center p-2 rounded-xl bg-white/5">
-                <p className="text-[10px] text-amber-200 uppercase font-bold">Free Tester</p>
+                <p className="text-[10px] text-amber-200 uppercase font-bold">Free</p>
                 <p className="text-sm font-black text-amber-300">{formatNumber(bannerFree)} pcs</p>
+              </div>
+              <div className="text-center p-2 rounded-xl bg-white/5">
+                <p className="text-[10px] text-purple-200 uppercase font-bold">Bonus</p>
+                <p className="text-sm font-black text-purple-300">{formatNumber(bannerBonus)} pcs</p>
               </div>
               <div className="text-center p-2 rounded-xl bg-white/5">
                 <p className="text-[10px] text-rose-200 uppercase font-bold">Retur</p>
@@ -869,15 +873,15 @@ export default function PenjualanPage() {
 
           <div className="glass-card rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-5 relative overflow-hidden group">
             <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4">
-              <div className="p-2 sm:p-3 md:p-3.5 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-500 to-yellow-600 text-white shadow-lg shadow-amber-500/25 flex-shrink-0">
-                <Gift className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" />
+              <div className="p-2 sm:p-3 md:p-3.5 rounded-xl sm:rounded-2xl bg-gradient-to-br from-purple-600 to-indigo-700 text-white shadow-lg shadow-purple-600/25 flex-shrink-0">
+                <Award className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] sm:text-xs font-bold tracking-wider text-slate-400 uppercase truncate">Roti Free (Tester)</p>
-                <p className="text-sm sm:text-base md:text-xl font-black text-amber-700 tracking-tight mt-0.5 truncate" title={`${formatNumber(totalPcsFree)} pcs`}>
-                  {formatNumber(totalPcsFree)} pcs
+                <p className="text-[10px] sm:text-xs font-bold tracking-wider text-slate-400 uppercase truncate">Bonus Agent</p>
+                <p className="text-sm sm:text-base md:text-xl font-black text-purple-700 tracking-tight mt-0.5 truncate" title={`${formatNumber(totalPcsBonus)} pcs`}>
+                  {formatNumber(totalPcsBonus)} pcs
                 </p>
-                <p className="text-[9px] sm:text-[10px] text-amber-600 font-medium truncate">{formatCurrency(totalFreeLoss)} (HPP)</p>
+                <p className="text-[9px] sm:text-[10px] text-purple-600 font-medium truncate">{formatCurrency(totalBonusLoss)}</p>
               </div>
             </div>
           </div>
@@ -900,7 +904,7 @@ export default function PenjualanPage() {
                 activeTab === "retur" ? "bg-white text-rose-600 shadow-sm" : "text-slate-500 hover:text-slate-800"
               }`}
             >
-              <RotateCcw className="h-4 w-4" /> Menu Retur & Free ({filteredReturns.length})
+              <RotateCcw className="h-4 w-4" /> Menu Retur, Free & Bonus ({filteredReturns.length})
             </button>
             <button
               onClick={() => setActiveTab("rekap-agent")}
@@ -1044,11 +1048,33 @@ export default function PenjualanPage() {
                     {freeReturns.length}
                   </span>
                 </button>
+
+                <button
+                  onClick={() => setReturSubTab("bonus")}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    returSubTab === "bonus"
+                      ? "bg-purple-700 text-white shadow-sm"
+                      : "text-purple-700 hover:bg-purple-50"
+                  }`}
+                >
+                  <Award className="h-3.5 w-3.5" />
+                  <span>⭐ Sub Menu: Bonus Agent</span>
+                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${returSubTab === "bonus" ? "bg-purple-900 text-white" : "bg-purple-100 text-purple-900"}`}>
+                    {bonusReturns.length}
+                  </span>
+                </button>
               </div>
 
               {/* 1 TUNGGAL TOMBOL BERFUNGSI SESUAI SUB-MENU AKTIF */}
               <div>
-                {returSubTab === "free" ? (
+                {returSubTab === "bonus" ? (
+                  <Button
+                    onClick={() => openAddReturn("BONUS")}
+                    className="rounded-xl text-xs font-bold bg-purple-700 hover:bg-purple-800 text-white shadow-sm"
+                  >
+                    <Plus className="h-3.5 w-3.5 mr-1" /> Catat Bonus Agent
+                  </Button>
+                ) : returSubTab === "free" ? (
                   <Button
                     onClick={() => openAddReturn("FREE")}
                     className="rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-sm"
@@ -1073,6 +1099,186 @@ export default function PenjualanPage() {
                 )}
               </div>
             </div>
+
+            {/* SUB-MENU VIEW 1: ⭐ BONUS AGENT MARKETING (JUMLAH SENDIRI-SENDIRI) */}
+            {returSubTab === "bonus" && (
+              <div className="space-y-6">
+                {/* Banner explanation */}
+                <div className="p-4 bg-purple-50 border border-purple-200 rounded-2xl flex items-start gap-3">
+                  <div className="p-2.5 bg-purple-600 text-white rounded-xl shadow-md shadow-purple-600/30 flex-shrink-0">
+                    <Award className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-purple-900 text-sm">Sub Menu: Bonus Agent Marketing</h4>
+                    <p className="text-xs text-purple-700 mt-0.5">
+                      Pencatatan jumlah roti bonus yang diberikan kepada masing-masing Agent Marketing dihitung secara <strong>sendiri-sendiri</strong> per agent (tidak memotong omset atau laba bersih agen di tab Rekap Laba).
+                    </p>
+                  </div>
+                </div>
+
+                {/* Summary stat cards for Bonus */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <Card className="border-purple-200 bg-white">
+                    <CardContent className="p-4">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-purple-600">Total Roti Bonus Dibagikan</p>
+                      <p className="text-2xl font-black text-purple-900 mt-1">{formatNumber(totalPcsBonus)} pcs</p>
+                      <p className="text-xs text-slate-400 mt-0.5">Dari {bonusReturns.length} kali transaksi bonus</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="border-purple-200 bg-white">
+                    <CardContent className="p-4">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-purple-600">Total Nilai HPP Bonus</p>
+                      <p className="text-2xl font-black text-purple-700 mt-1">{formatCurrency(totalBonusLoss)}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">Biaya produksi roti yang dijadikan reward</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="border-purple-200 bg-white">
+                    <CardContent className="p-4">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-purple-600">Jumlah Agent Terdaftar</p>
+                      <p className="text-2xl font-black text-slate-800 mt-1">{marketingAgents.length} Agent</p>
+                      <p className="text-xs text-slate-400 mt-0.5">Masing-masing memiliki saldo bonus sendiri-sendiri</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* GRID REKAP JUMLAH BONUS SENDIRI-SENDIRI TIAP AGENT */}
+                <div className="space-y-3">
+                  <div>
+                    <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                      <Users className="h-5 w-5 text-purple-600" />
+                      Rekap Jumlah Bonus Tiap Agent Marketing (Sendiri-Sendiri)
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Klik tombol &quot;+ Beri Bonus&quot; di bawah untuk mencatat bonus langsung ke agent yang bersangkutan
+                    </p>
+                  </div>
+
+                  {marketingAgents.length === 0 ? (
+                    <div className="p-8 text-center bg-white border border-slate-200 rounded-2xl text-slate-400 space-y-3">
+                      <p>Belum ada Marketing Agent yang terdaftar.</p>
+                      <Button onClick={() => setOpenAgentManager(true)} className="bg-purple-700 hover:bg-purple-800 text-white rounded-xl text-xs font-bold">
+                        + Tambah Agent Marketing Sekarang
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {agentBonusSummary.map(ab => (
+                        <Card key={ab.agent.id} className="overflow-hidden border-purple-200 hover:border-purple-400 transition-all shadow-sm">
+                          <CardHeader className="bg-gradient-to-r from-purple-700 to-indigo-800 text-white p-4">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <span className="text-[10px] font-black uppercase tracking-wider text-purple-200">
+                                  {ab.agent.code || "AGENT"}
+                                </span>
+                                <CardTitle className="text-base font-black text-white mt-0.5">
+                                  {ab.agent.name}
+                                </CardTitle>
+                              </div>
+                              <span className="p-2 bg-white/10 rounded-xl">
+                                <Award className="h-4 w-4 text-amber-300" />
+                              </span>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="p-4 space-y-3 bg-white">
+                            <div className="p-3 bg-purple-50 rounded-xl border border-purple-200 flex justify-between items-center">
+                              <div>
+                                <p className="text-[10px] font-bold uppercase tracking-wider text-purple-700">Total Jumlah Bonus</p>
+                                <p className="text-2xl font-black text-purple-900 mt-0.5">
+                                  {formatNumber(ab.totalBonusPcs)} <span className="text-sm font-bold text-purple-600">pcs</span>
+                                </p>
+                              </div>
+                              <Badge className="bg-purple-600 text-white font-extrabold text-xs px-2.5 py-1">
+                                {ab.count}x Diberi
+                              </Badge>
+                            </div>
+
+                            <div className="text-xs space-y-1.5 text-slate-600 border-t border-slate-100 pt-2">
+                              <div className="flex justify-between">
+                                <span className="text-slate-400">Total Nilai HPP Bonus:</span>
+                                <span className="font-bold text-slate-800">{formatCurrency(ab.totalBonusHpp)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-slate-400">Terakhir Diberi Bonus:</span>
+                                <span className="font-medium text-slate-700">
+                                  {ab.lastBonus ? formatDate(ab.lastBonus) : "Belum pernah"}
+                                </span>
+                              </div>
+                            </div>
+
+                            <Button
+                              onClick={() => openAddReturn("BONUS", ab.agent.id)}
+                              className="w-full bg-purple-700 hover:bg-purple-800 text-white rounded-xl text-xs font-bold h-9 gap-1 shadow-sm"
+                            >
+                              <Plus className="h-3.5 w-3.5" /> Beri Bonus ke {ab.agent.name}
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Table of all Bonus transactions */}
+                <Card className="overflow-hidden border-purple-200">
+                  <CardHeader className="bg-purple-50 border-b border-purple-100 py-4">
+                    <CardTitle className="text-base font-bold flex items-center gap-2 text-purple-950">
+                      <Award className="h-5 w-5 text-purple-700" /> Riwayat Transaksi Bonus Agent Marketing
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    {bonusReturns.length === 0 ? (
+                      <div className="text-center py-12 text-slate-400">Belum ada catatan bonus yang diberikan kepada agent</div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="bg-slate-50 border-b border-slate-100 text-slate-400 font-bold uppercase text-[10px] tracking-wider">
+                              <th className="text-left py-3.5 px-4 sm:px-6">Tanggal</th>
+                              <th className="text-left py-3.5 px-4 sm:px-6">Penerima (Agent)</th>
+                              <th className="text-left py-3.5 px-4 sm:px-6">Nama Roti</th>
+                              <th className="text-right py-3.5 px-4 sm:px-6">Jumlah Bonus</th>
+                              <th className="text-left py-3.5 px-4 sm:px-6">Alasan / Prestasi</th>
+                              <th className="text-right py-3.5 px-4 sm:px-6">Nilai HPP</th>
+                              <th className="text-left py-3.5 px-4 sm:px-6">Catatan</th>
+                              <th className="text-center py-3.5 px-4 sm:px-6">Aksi</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {bonusReturns.map(r => (
+                              <tr key={r.id} className="hover:bg-purple-50/40 transition-colors">
+                                <td className="py-4 px-4 sm:px-6 text-slate-500 font-medium whitespace-nowrap">{formatDate(r.date)}</td>
+                                <td className="py-4 px-4 sm:px-6">
+                                  <Badge className="bg-purple-100 text-purple-900 border border-purple-200 font-extrabold text-[10px]">
+                                    {r.agent?.name || "Umum"}
+                                  </Badge>
+                                </td>
+                                <td className="py-4 px-4 sm:px-6 font-bold text-slate-800">{r.recipeName}</td>
+                                <td className="py-4 px-4 sm:px-6 text-right font-black text-purple-700">+{formatNumber(r.quantity)} pcs</td>
+                                <td className="py-4 px-4 sm:px-6">
+                                  <span className="text-xs font-semibold text-purple-800">{r.reason || "Bonus Agent"}</span>
+                                </td>
+                                <td className="py-4 px-4 sm:px-6 text-right font-bold text-slate-700">{formatCurrency(r.lossAmount)}</td>
+                                <td className="py-4 px-4 sm:px-6 text-xs text-slate-400">{r.notes || "-"}</td>
+                                <td className="py-4 px-4 sm:px-6 text-center">
+                                  <div className="flex justify-center gap-1">
+                                    <Button variant="outline" size="sm" onClick={() => openEditReturn(r)} className="rounded-xl h-8 w-8 p-0">
+                                      <Pencil className="h-3.5 w-3.5 text-slate-600" />
+                                    </Button>
+                                    <Button variant="outline" size="sm" onClick={() => handleDeleteReturn(r.id)} className="rounded-xl h-8 w-8 p-0 text-rose-600 hover:bg-rose-50 border-rose-200">
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
 
             {/* SUB-MENU VIEW 2: 🎁 ROTI FREE (TESTER / PROMOSI) - TANPA AGENT (KESATUAN PERUSAHAAN) */}
             {returSubTab === "free" && (
@@ -1740,7 +1946,7 @@ export default function PenjualanPage() {
             </DialogHeader>
 
             {/* Category Segmented Switcher in Modal */}
-            <div className="grid grid-cols-2 gap-1 bg-slate-100 p-1 rounded-2xl mt-1">
+            <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-2xl mt-1">
               <button
                 type="button"
                 onClick={() => setReturnForm({
@@ -1771,6 +1977,21 @@ export default function PenjualanPage() {
                 }`}
               >
                 🎁 Free
+              </button>
+              <button
+                type="button"
+                onClick={() => setReturnForm({
+                  ...returnForm,
+                  category: "BONUS",
+                  reason: "Bonus Target Penjualan",
+                })}
+                className={`py-2 px-2 rounded-xl text-xs font-bold transition-all ${
+                  returnForm.category === "BONUS"
+                    ? "bg-purple-700 text-white shadow-sm"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                ⭐ Bonus Agent
               </button>
             </div>
 
