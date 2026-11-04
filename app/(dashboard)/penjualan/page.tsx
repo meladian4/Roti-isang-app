@@ -1599,7 +1599,7 @@ export default function PenjualanPage() {
                   <CardContent className="p-5 space-y-3 bg-white">
                     <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-100">
                       <span className="text-slate-500 font-medium">Penjualan Bersih (Net):</span>
-                      <span className="font-extrabold text-emerald-600 text-sm">{formatCurrency(af.omset)}</span>
+                      <span className="font-extrabold text-emerald-600 text-base">{formatCurrency(af.omset)}</span>
                     </div>
                     <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-100 text-slate-500">
                       <span>• Penjualan Kotor Toko:</span>
@@ -1609,22 +1609,9 @@ export default function PenjualanPage() {
                       <span className="font-medium">• Potongan Retur Reguler:</span>
                       <span className="font-bold">-{formatCurrency(af.potonganRetur)} ({af.pcsReturned} pcs)</span>
                     </div>
-                    <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-100">
-                      <span className="text-slate-500 font-medium">Roti Terjual Bersih:</span>
-                      <span className="font-bold text-slate-800">{formatNumber(af.pcsSold)} pcs</span>
-                    </div>
-                    <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-100 text-slate-600">
-                      <span className="font-medium">• Modal Bahan Baku (HPP):</span>
-                      <span className="font-bold text-slate-700">-{formatCurrency(af.totalHppSold)}</span>
-                    </div>
-                    <div className="pt-2 flex justify-between items-center text-sm bg-emerald-50 p-3 rounded-xl border border-emerald-200/60">
-                      <div>
-                        <span className="font-extrabold text-slate-700 block">Laba Bersih Agent:</span>
-                        <span className="text-[10px] text-slate-400 font-normal">Penjualan Bersih - Modal HPP</span>
-                      </div>
-                      <span className={`font-black text-base ${af.labaBersih >= 0 ? "text-emerald-700" : "text-rose-600"}`}>
-                        {formatCurrency(af.labaBersih)}
-                      </span>
+                    <div className="flex justify-between items-center text-xs pt-1">
+                      <span className="text-slate-600 font-bold">Roti Terjual Bersih:</span>
+                      <span className="font-black text-slate-900 text-sm">{formatNumber(af.pcsSold)} pcs</span>
                     </div>
                   </CardContent>
                 </Card>
@@ -1635,7 +1622,7 @@ export default function PenjualanPage() {
             <Card className="overflow-hidden border-emerald-500/10">
               <CardHeader className="bg-gradient-to-r from-emerald-50/90 to-teal-50/60 border-b border-emerald-100 py-4 flex flex-row justify-between items-center">
                 <CardTitle className="text-base font-bold flex items-center gap-2 text-slate-800">
-                  <Users className="h-5 w-5 text-emerald-600" /> Ringkasan Laba & Retur Per Marketing Agent
+                  <Users className="h-5 w-5 text-emerald-600" /> Ringkasan Penjualan & Retur Per Marketing Agent
                 </CardTitle>
                 <Button size="sm" variant="outline" onClick={() => setOpenAgentManager(true)} className="rounded-xl text-xs font-bold gap-1 border-purple-300 text-purple-700 hover:bg-purple-50">
                   <Settings className="h-3.5 w-3.5" /> Kelola & Edit Nama Agent
@@ -1650,10 +1637,9 @@ export default function PenjualanPage() {
                         <th className="text-right py-3.5 px-6">Kirim (Pcs)</th>
                         <th className="text-right py-3.5 px-6">Retur (Pcs)</th>
                         <th className="text-right py-3.5 px-6">Bersih (Pcs)</th>
-                        <th className="text-right py-3.5 px-6">Penjualan Bersih</th>
+                        <th className="text-right py-3.5 px-6">Penjualan Kotor</th>
                         <th className="text-right py-3.5 px-6">Potongan Retur</th>
-                        <th className="text-right py-3.5 px-6">Modal HPP Roti</th>
-                        <th className="text-right py-3.5 px-6">Laba Bersih Agent</th>
+                        <th className="text-right py-3.5 px-6">Penjualan Bersih (Net)</th>
                         <th className="text-center py-3.5 px-6">Aksi</th>
                       </tr>
                     </thead>
@@ -1664,11 +1650,10 @@ export default function PenjualanPage() {
                           <td className="py-4 px-6 text-right font-medium text-slate-500">{formatNumber(af.pcsGrossSold)} pcs</td>
                           <td className="py-4 px-6 text-right font-bold text-rose-600">-{formatNumber(af.pcsReturned)} pcs</td>
                           <td className="py-4 px-6 text-right font-bold text-slate-700">{formatNumber(af.pcsSold)} pcs</td>
-                          <td className="py-4 px-6 text-right font-extrabold text-emerald-600">{formatCurrency(af.omset)}</td>
+                          <td className="py-4 px-6 text-right font-semibold text-slate-700">{formatCurrency(af.omsetKotor)}</td>
                           <td className="py-4 px-6 text-right font-bold text-rose-600">-{formatCurrency(af.potonganRetur)}</td>
-                          <td className="py-4 px-6 text-right font-medium text-slate-600">-{formatCurrency(af.totalHppSold)}</td>
-                          <td className={`py-4 px-6 text-right font-black text-base ${af.labaBersih >= 0 ? "text-emerald-700" : "text-rose-600"}`}>
-                            {formatCurrency(af.labaBersih)}
+                          <td className="py-4 px-6 text-right font-black text-base text-emerald-700">
+                            {formatCurrency(af.omset)}
                           </td>
                           <td className="py-4 px-6 text-center">
                             <Button variant="outline" size="sm" onClick={() => { setOpenAgentManager(true); startEditAgent(af.agent) }} className="rounded-xl h-8 text-xs font-bold gap-1">
