@@ -19,31 +19,28 @@ const nextAuth = NextAuth({
         const emailInput = (credentials.email as string).trim().toLowerCase()
         const passInput = (credentials.password as string).trim()
 
-        const isPasukanAdmin =
-          (emailInput === "pasukan@ropisku.com" || emailInput === "pasukan" || emailInput === "pasukan@ropisku.web.id" || emailInput === "pasukan@rotisang.com") &&
-          (passInput === "ropisku123" || passInput.toLowerCase() === "ropisku123" || passInput === "Ropisku123" || passInput === "ropisku")
-
-        const isLegacyAdmin =
+        const isAdmin =
           (emailInput === "admin@rotisang.com" || emailInput === "admin" || emailInput === "admin@ropisku.com" || emailInput === "admin@ropisku.web.id") &&
           (passInput === "admin123" || passInput.toLowerCase() === "admin123" || passInput === "admin" || passInput === "RotiIsang2026!" || passInput === "rotisang2026")
 
-        if (isPasukanAdmin || isLegacyAdmin) {
+        if (isAdmin) {
           return {
             id: "admin-id",
-            email: "pasukan@ropisku.com",
-            name: "Admin Pasukan Ropisku",
+            email: "admin@rotisang.com",
+            name: "Admin Ropisku",
             role: "ADMIN",
           }
         }
 
-        if (
-          (emailInput === "marketing@ropisku.com" || emailInput === "marketing" || emailInput === "marketing@rotisang.com" || emailInput === "marketing@ropisku.web.id") &&
-          (passInput === "marketing123" || passInput.toLowerCase() === "marketing123" || passInput === "marketing" || passInput === "Marketing123")
-        ) {
+        const isMarketing =
+          (emailInput === "pasukan@ropisku.com" || emailInput === "pasukan" || emailInput === "pasukan@ropisku.web.id" || emailInput === "marketing@ropisku.com" || emailInput === "marketing") &&
+          (passInput === "ropisku123" || passInput.toLowerCase() === "ropisku123" || passInput === "Ropisku123" || passInput === "ropisku" || passInput === "marketing123")
+
+        if (isMarketing) {
           return {
             id: "marketing-id",
-            email: "marketing@ropisku.com",
-            name: "Tim Marketing Ropisku",
+            email: "pasukan@ropisku.com",
+            name: "Tim Pasukan Ropisku (Marketing)",
             role: "MARKETING",
           }
         }
@@ -116,8 +113,8 @@ export async function auth() {
       return {
         user: {
           id: parsed.id || "admin-id",
-          email: parsed.email || "pasukan@ropisku.com",
-          name: parsed.name || "Admin Pasukan Ropisku",
+          email: parsed.email || "admin@rotisang.com",
+          name: parsed.name || "Admin Ropisku",
           role: parsed.role || "ADMIN",
         },
         expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
