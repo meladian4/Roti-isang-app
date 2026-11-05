@@ -8,9 +8,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
     redirect("/login")
   }
 
+  const role = (session.user as any)?.role || "ADMIN"
+
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-slate-900/5 antialiased">
-      <Sidebar />
+      <Sidebar userRole={role} />
       <main className="flex-1 min-w-0 w-full overflow-x-hidden overflow-y-auto">
         {children}
       </main>

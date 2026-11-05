@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react"
 import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import { Header } from "@/components/layout/header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -40,7 +41,16 @@ const CATEGORIES = [
 const UNITS = ["sisir", "pcs", "kg", "tandan", "pack", "roll", "liter", "tabung", "bulan", "hari", "kali", "unit", "lainnya"]
 
 export default function OperasionalPage() {
+  const router = useRouter()
   const { data: session } = useSession()
+
+  // Redirect marketing away from operational expenses
+  useEffect(() => {
+    if ((session?.user as any)?.role === "MARKETING") {
+      router.replace("/penjualan")
+    }
+  }, [session, router])
+
   const [expenses, setExpenses] = useState<OperationalExpense[]>([])
   const [loading, setLoading] = useState(true)
 

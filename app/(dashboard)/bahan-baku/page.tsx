@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import { Header } from "@/components/layout/header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -23,6 +25,16 @@ interface Ingredient {
 const UNITS = ["gram", "kg", "ml", "liter", "pcs", "butir", "sdm", "sdt", "bungkus"]
 
 export default function BahanBakuPage() {
+  const router = useRouter()
+  const { data: session } = useSession()
+
+  // Redirect marketing away from raw ingredients warehouse
+  useEffect(() => {
+    if ((session?.user as any)?.role === "MARKETING") {
+      router.replace("/penjualan")
+    }
+  }, [session, router])
+
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
   const [loading, setLoading] = useState(true)
   const [openAdd, setOpenAdd] = useState(false)

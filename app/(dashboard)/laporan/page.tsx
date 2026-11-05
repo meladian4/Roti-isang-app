@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 import { Header } from "@/components/layout/header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -59,6 +61,16 @@ const YEARS = ["2024", "2025", "2026", "2027", "2028"]
 const COLORS = ["#10b981", "#f97316", "#ef4444", "#d97706", "#3b82f6"]
 
 export default function LaporanPage() {
+  const router = useRouter()
+  const { data: session } = useSession()
+
+  // Redirect marketing away from admin financial reports
+  useEffect(() => {
+    if ((session?.user as any)?.role === "MARKETING") {
+      router.replace("/penjualan")
+    }
+  }, [session, router])
+
   const [data, setData] = useState<LaporanData | null>(null)
   const [period, setPeriod] = useState("month")
   

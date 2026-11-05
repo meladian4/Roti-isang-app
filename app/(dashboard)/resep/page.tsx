@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import { Header } from "@/components/layout/header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -21,6 +23,16 @@ interface Recipe {
 }
 
 export default function ResepPage() {
+  const router = useRouter()
+  const { data: session } = useSession()
+
+  // Redirect marketing away from secret recipes
+  useEffect(() => {
+    if ((session?.user as any)?.role === "MARKETING") {
+      router.replace("/penjualan")
+    }
+  }, [session, router])
+
   const [recipes, setRecipes] = useState<Recipe[]>([])
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
   const [loading, setLoading] = useState(true)

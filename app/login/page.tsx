@@ -64,8 +64,12 @@ export default function LoginPage() {
         return
       }
 
-      // 2. Instant navigation to dashboard
-      window.location.href = "/dashboard"
+      // 2. Instant navigation: Marketing to /penjualan, Admin to /dashboard
+      if (apiData.user?.role === "MARKETING") {
+        window.location.href = "/penjualan"
+      } else {
+        window.location.href = "/dashboard"
+      }
     } catch (err) {
       console.error("Login handle error:", err)
       setError("Email atau password salah. Silakan periksa kembali.")

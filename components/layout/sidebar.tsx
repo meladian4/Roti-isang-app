@@ -21,7 +21,7 @@ import {
   ClipboardPenLine,
   ScrollText,
 } from "lucide-react"
-import { signOut } from "next-auth/react"
+import { signOut, useSession } from "next-auth/react"
 
 const mainNavItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, badge: null },
@@ -37,10 +37,18 @@ const externalNavItems = [
   { href: "/pesanan", label: "Pesanan", icon: ClipboardPenLine, badge: "LOGBOOK" },
 ]
 
-export function Sidebar() {
+export function Sidebar({ userRole }: { userRole?: string }) {
+  const { data: session } = useSession()
   const pathname = usePathname()
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+
+  const currentRole = userRole || (session?.user as any)?.role || "ADMIN"
+  const isMarketing = currentRole === "MARKETING"
+
+  const displayedMainNavItems = isMarketing
+    ? mainNavItems.filter((item) => item.href === "/penjualan")
+    : mainNavItems
 
   const handleLogout = async () => {
     try {
@@ -103,7 +111,9 @@ export function Sidebar() {
                 </div>
                 <div>
                   <h1 className="font-extrabold text-base tracking-tight text-emerald-100">Ropisku</h1>
-                  <p className="text-emerald-200/80 text-[10px] font-medium">Production & Finance</p>
+                  <p className={cn("text-[10px] font-medium", isMarketing ? "text-amber-300 font-bold" : "text-emerald-200/80")}>
+                    {isMarketing ? "Tim Marketing" : "Production & Finance"}
+                  </p>
                 </div>
               </div>
               <button
@@ -117,9 +127,11 @@ export function Sidebar() {
             {/* Nav Items */}
             <nav className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
               <div className="px-3 py-1">
-                <p className="text-[10px] font-extrabold tracking-widest text-emerald-200/60 uppercase">Menu Utama</p>
+                <p className="text-[10px] font-extrabold tracking-widest text-emerald-200/60 uppercase">
+                  {isMarketing ? "Menu Marketing" : "Menu Utama"}
+                </p>
               </div>
-              {mainNavItems.map((item) => {
+              {displayedMainNavItems.map((item) => {
                 const Icon = item.icon
                 const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
                 return (
@@ -260,7 +272,9 @@ export function Sidebar() {
                 <h1 className="font-extrabold text-lg tracking-tight bg-gradient-to-r from-emerald-100 via-teal-100 to-white bg-clip-text text-transparent">
                   Ropisku
                 </h1>
-                <p className="text-emerald-200/80 text-[11px] font-medium tracking-wide">Production & Finance</p>
+                <p className={cn("text-[11px] font-medium tracking-wide", isMarketing ? "text-amber-300 font-bold" : "text-emerald-200/80")}>
+                  {isMarketing ? "Tim Marketing" : "Production & Finance"}
+                </p>
               </div>
             </div>
           )}
@@ -270,10 +284,12 @@ export function Sidebar() {
         <nav className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
           {!isCollapsed && (
             <div className="px-4 py-1.5 transition-opacity duration-300">
-              <p className="text-[10px] font-extrabold tracking-widest text-emerald-200/60 uppercase">Menu Utama</p>
+              <p className="text-[10px] font-extrabold tracking-widest text-emerald-200/60 uppercase">
+                {isMarketing ? "Menu Marketing" : "Menu Utama"}
+              </p>
             </div>
           )}
-          {mainNavItems.map((item) => {
+          {displayedMainNavItems.map((item) => {
             const Icon = item.icon
             const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
             return (

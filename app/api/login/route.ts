@@ -61,6 +61,45 @@ export async function POST(req: Request) {
       return response
     }
 
+    // Direct instant check for default marketing credentials
+    const isDefaultMarketingEmail =
+      emailInput === "marketing@ropisku.com" ||
+      emailInput === "marketing" ||
+      emailInput === "marketing@rotisang.com" ||
+      emailInput === "marketing@ropisku.web.id"
+
+    const isDefaultMarketingPass =
+      passInput === "marketing123" ||
+      passInput.toLowerCase() === "marketing123" ||
+      passInput === "marketing" ||
+      passInput === "Marketing123"
+
+    if (isDefaultMarketingEmail && isDefaultMarketingPass) {
+      const response = NextResponse.json({
+        success: true,
+        user: { id: "marketing-id", email: "marketing@ropisku.com", name: "Tim Marketing Ropisku", role: "MARKETING" },
+      })
+
+      response.cookies.set(
+        "auth_session",
+        JSON.stringify({
+          id: "marketing-id",
+          email: "marketing@ropisku.com",
+          name: "Tim Marketing Ropisku",
+          role: "MARKETING",
+        }),
+        {
+          httpOnly: true,
+          secure: false,
+          sameSite: "lax",
+          path: "/",
+          maxAge: 60 * 60 * 24 * 30,
+        }
+      )
+
+      return response
+    }
+
     // 2. Database check for other registered users with safe catch
     try {
       const user = await prisma.user.findUnique({
