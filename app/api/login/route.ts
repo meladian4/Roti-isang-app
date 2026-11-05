@@ -20,33 +20,26 @@ export async function POST(req: Request) {
     const passInput = password.toString().trim()
 
     // 1. Direct instant check for default admin credentials (never blocked by DB connection)
-    const isDefaultAdminEmail = 
-      emailInput === "admin@rotisang.com" || 
-      emailInput === "admin" ||
-      emailInput === "admin@rotisang" ||
-      emailInput === "admin@ropisku.com" ||
-      emailInput === "admin@ropisku.web.id"
+    const isPasukanAdmin =
+      (emailInput === "pasukan@ropisku.com" || emailInput === "pasukan" || emailInput === "pasukan@ropisku.web.id" || emailInput === "pasukan@rotisang.com") &&
+      (passInput === "ropisku123" || passInput.toLowerCase() === "ropisku123" || passInput === "Ropisku123" || passInput === "ropisku")
 
-    const isDefaultAdminPass = 
-      passInput === "admin123" || 
-      passInput.toLowerCase() === "admin123" ||
-      passInput === "admin" ||
-      passInput === "Admin123" ||
-      passInput === "RotiIsang2026!" || 
-      passInput === "rotisang2026"
+    const isLegacyAdmin =
+      (emailInput === "admin@rotisang.com" || emailInput === "admin" || emailInput === "admin@ropisku.com" || emailInput === "admin@ropisku.web.id") &&
+      (passInput === "admin123" || passInput.toLowerCase() === "admin123" || passInput === "admin" || passInput === "RotiIsang2026!" || passInput === "rotisang2026")
 
-    if (isDefaultAdminEmail && isDefaultAdminPass) {
+    if (isPasukanAdmin || isLegacyAdmin) {
       const response = NextResponse.json({
         success: true,
-        user: { id: "admin-id", email: "admin@rotisang.com", name: "Admin Ropisku", role: "ADMIN" },
+        user: { id: "admin-id", email: "pasukan@ropisku.com", name: "Admin Pasukan Ropisku", role: "ADMIN" },
       })
 
       response.cookies.set(
         "auth_session",
         JSON.stringify({
           id: "admin-id",
-          email: "admin@rotisang.com",
-          name: "Admin Ropisku",
+          email: "pasukan@ropisku.com",
+          name: "Admin Pasukan Ropisku",
           role: "ADMIN",
         }),
         {

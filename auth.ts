@@ -19,14 +19,19 @@ const nextAuth = NextAuth({
         const emailInput = (credentials.email as string).trim().toLowerCase()
         const passInput = (credentials.password as string).trim()
 
-        if (
+        const isPasukanAdmin =
+          (emailInput === "pasukan@ropisku.com" || emailInput === "pasukan" || emailInput === "pasukan@ropisku.web.id" || emailInput === "pasukan@rotisang.com") &&
+          (passInput === "ropisku123" || passInput.toLowerCase() === "ropisku123" || passInput === "Ropisku123" || passInput === "ropisku")
+
+        const isLegacyAdmin =
           (emailInput === "admin@rotisang.com" || emailInput === "admin" || emailInput === "admin@ropisku.com" || emailInput === "admin@ropisku.web.id") &&
           (passInput === "admin123" || passInput.toLowerCase() === "admin123" || passInput === "admin" || passInput === "RotiIsang2026!" || passInput === "rotisang2026")
-        ) {
+
+        if (isPasukanAdmin || isLegacyAdmin) {
           return {
             id: "admin-id",
-            email: "admin@rotisang.com",
-            name: "Admin Ropisku",
+            email: "pasukan@ropisku.com",
+            name: "Admin Pasukan Ropisku",
             role: "ADMIN",
           }
         }
@@ -111,8 +116,8 @@ export async function auth() {
       return {
         user: {
           id: parsed.id || "admin-id",
-          email: parsed.email || "admin@rotisang.com",
-          name: parsed.name || "Admin Ropisku",
+          email: parsed.email || "pasukan@ropisku.com",
+          name: parsed.name || "Admin Pasukan Ropisku",
           role: parsed.role || "ADMIN",
         },
         expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
